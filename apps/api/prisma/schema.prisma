@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  phone     String?  @unique
+  email     String?  @unique
+  password  String
+  avatar    String?
+  role      UserRole @default(USER)
+  bio       String?
+  isVip     Boolean  @default(false)
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries    CurseEntry[]
+  voices     VoiceRecording[]
+  comments   Comment[]
+  reviews    ReviewTask[]
+  likes      Like[]
+
+  @@index([phone])
+  @@index([role])
+}
+
+enum UserRole {
+  USER
+  REVIEWER
+  ADMIN
+}
+
+model CurseEntry {
+  id    String @id @default(uuid())
+  content String
+  pinyin String
+  meaning String
+
+  province    String
+  city        String
+  county      String
+  dialectGroup String?
+
+  category    EntryCategory @default(CURSE_WORD)
+  level       ContentLevel  @default(GREEN)
+
+  source      String @default("ai_generated")
+  status      EntryStatus  @default(AI_GENERATED)
+  submittedBy String?
+
+  spicyLevel Int    @default(1)
+  playCount  Int    @default(0)
+  likeCount  Int    @default(0)
+  reportCount Int   @default(0)
+
+  aiModel       String?
+  aiGeneratedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User?             @relation(fields: [submittedBy], references: [id])
+  voices       VoiceRecording[]
+  comments     Comment[]
+  reviewTasks  ReviewTask[]
+  likes        Like[]
+
+  @@index([province, city, county])
+  @@index([category])
+  @@index([status])
+  @@index([dialectGroup])
+  @@index([spicyLevel])
+  @@index([createdAt])
+}
+
+enum EntryCategory {
+  CURSE_WORD
+  COMMON_PHRASE
+  EXAMPLE
+}
+
+enum EntryStatus {
+  PENDING
+  AI_GENERATED
+  APPROVED
+  REJECTED
+}
+
+enum ContentLevel {
+  GREEN
+  YELLOW
+  RED
+}
+
+model VoiceRecording {
+  id      String @id @default(uuid())
+  entryId String
+  userId  String?
+
+  fileUrl        String
+  fileKey        String
+  durationSeconds Float?
+  fileSize       Int?
+  mimeType       String?
+
+  transcript    String?
+  isVerified    Boolean @default(false)
+
+  reviewStatus  ReviewStatus @default(PENDING)
+  aiScore       Float?
+  reviewNote    String?
+
+  playCount Int @default(0)
+  likeCount Int @default(0)
+
+  recordingMethod String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entry   CurseEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user    User?      @relation(fields: [userId], references: [id])
+  reviewTasks ReviewTask[]
+
+  @@index([entryId])
+  @@index([reviewStatus])
+  @@index([userId])
+}
+
+enum ReviewStatus {
+  PENDING
+  AI_PASSED
+  AI_REJECTED
+  HUMAN_PASSED
+  HUMAN_REJECTED
+}
+
+model CountyPower {
+  id           String @id @default(uuid())
+  provinceCode String
+  province     String
+  cityCode     String
+  city         String
+  countyCode   String
+  county       String
+
+  totalEntries  Int @default(0)
+  totalVoices   Int @default(0)
+  avgSpicyLevel Float @default(0)
+  userRatings   Float @default(0)
+  spreadIndex   Float @default(0)
+
+  powerValue Float @default(0)
+  rank       Int   @default(0)
+
+  latitude  Float?
+  longitude Float?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([provinceCode, cityCode, countyCode])
+  @@index([province])
+  @@index([rank])
+  @@index([powerValue])
+}
+
+model Comment {
+  id      String  @id @default(uuid())
+  entryId String?
+  userId  String
+
+  content String
+
+  type String @default("normal")
+
+  originalContent String?
+  correction      String?
+
+  status  String   @default("published")
+  replies Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entry CurseEntry? @relation(fields: [entryId], references: [id], onDelete: SetNull)
+  user  User        @relation(fields: [userId], references: [id])
+
+  @@index([entryId])
+  @@index([userId])
+  @@index([status])
+}
+
+model ReviewTask {
+  id String @id @default(uuid())
+
+  entryId   String?
+  voiceId   String?
+  commentId String?
+
+  type   String
+  status String @default("pending")
+
+  aiResult Json?
+  aiScore  Float?
+
+  reviewerId  String?
+  reviewResult String?
+  reviewNote  String?
+
+  level Int @default(1)
+
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  entry   CurseEntry?     @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  voice   VoiceRecording? @relation(fields: [voiceId], references: [id], onDelete: Cascade)
+  reviewer User?          @relation(fields: [reviewerId], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([reviewerId])
+}
+
+model Like {
+  id       String  @id @default(uuid())
+  userId   String
+  entryId  String?
+  voiceId  String?
+  type     String
+
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id])
+  entry CurseEntry? @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entryId])
+  @@unique([userId, voiceId])
+}
+
+model Report {
+  id         String @id @default(uuid())
+  userId     String
+  targetId   String
+  targetType String
+  reason     String
+  detail     String?
+  status     String @default("pending")
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([targetId, targetType])
+}

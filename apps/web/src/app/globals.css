@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Spicy level colors */
+.spicy-level-1 { background-color: #fef3c7; }
+.spicy-level-2 { background-color: #fde68a; }
+.spicy-level-3 { background-color: #fcd34d; }
+.spicy-level-4 { background-color: #fb923c; color: white; }
+.spicy-level-5 { background-color: #ef4444; color: white; }
+
+/* Danmu animation */
+.danmu-item {
+  animation: danmuMove linear forwards;
+  white-space: nowrap;
+  position: absolute;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes danmuMove {
+  from {
+    transform: translateX(100vw);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}

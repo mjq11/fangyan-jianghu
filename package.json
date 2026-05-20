@@ -1,0 +1,37 @@
+{
+  "name": "fangyan-jianghu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "方言江湖 - 中国方言文化数字博物馆",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  },
+  "overrides": {
+    "eslint-config-next": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
+  "packageManager": "npm@10.2.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
