@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const repoName = 'fangyan-jianghu';
+
 const nextConfig = {
   transpilePackages: ['@fangyan/shared'],
   images: {
@@ -6,13 +8,15 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
+  output: 'export',
+  trailingSlash: true,
+  basePath: `/${repoName}`,
+  assetPrefix: `/${repoName}/`,
+  env: {
+    NEXT_PUBLIC_API_URL: '/api',
+  },
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
-      },
-    ];
+    return [];
   },
 };
 

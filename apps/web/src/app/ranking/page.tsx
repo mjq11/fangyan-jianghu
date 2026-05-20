@@ -81,7 +81,7 @@ function RankingContent() {
               }) => (
                 <Link
                   key={`${item.province}-${item.city}-${item.county}`}
-                  href={`/county/${encodeURIComponent(item.province)}-${encodeURIComponent(item.county)}`}
+                  href={`/county?id=${encodeURIComponent(item.province)}-${encodeURIComponent(item.county)}`}
                   className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center"
                 >
                   <div className="col-span-1">
