@@ -13,6 +13,8 @@ function UploadForm() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [copied, setCopied] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // 地区选择
   const [province, setProvince] = useState('');
@@ -87,10 +89,11 @@ function UploadForm() {
   };
 
   if (step === 'success') {
-    // 保存认证卡片为图片
+    // 生成认证卡片图片并弹出长按保存遮罩（兼容手机端微信/Safari）
     const handleSaveImage = async () => {
       const el = document.getElementById('cert-card');
       if (!el) return;
+      setIsGenerating(true);
       try {
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(el, {
@@ -98,12 +101,11 @@ function UploadForm() {
           scale: 2,
           useCORS: true,
         });
-        const link = document.createElement('a');
-        link.download = `方言江湖认证_${submittedEntry?.content || '证书'}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        setShareImageUrl(canvas.toDataURL('image/png'));
       } catch {
-        alert('保存失败，请尝试截图保存');
+        alert('图片生成失败，请尝试截图保存');
+      } finally {
+        setIsGenerating(false);
       }
     };
 
@@ -234,9 +236,10 @@ function UploadForm() {
             {/* 保存图片按钮 */}
             <button
               onClick={handleSaveImage}
-              className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-yellow-500 text-gray-900 rounded-xl font-bold hover:from-orange-600 hover:to-yellow-600 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
+              disabled={isGenerating}
+              className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-yellow-500 text-gray-900 rounded-xl font-bold hover:from-orange-600 hover:to-yellow-600 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all disabled:opacity-60"
             >
-              📸 保存认证图片 · 分享到朋友圈
+              {isGenerating ? '⏳ 图片生成中...' : '📸 保存认证图片 · 分享到朋友圈'}
             </button>
 
             {/* 复制战报按钮 */}
@@ -270,6 +273,36 @@ function UploadForm() {
             </div>
           </div>
         </motion.div>
+
+        {/* ========== 长按保存图片遮罩（手机端兼容方案） ========== */}
+        {shareImageUrl && (
+          <div
+            className="fixed inset-0 z-[999] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+            onClick={() => setShareImageUrl(null)}
+          >
+            {/* 顶部提示 */}
+            <div className="text-center mb-4 animate-bounce">
+              <p className="text-white text-lg font-black mb-1">👇 长按下方图片保存到相册</p>
+              <p className="text-gray-400 text-xs">保存后即可分享到微信朋友圈、微博等</p>
+            </div>
+
+            {/* 生成的证书图片 */}
+            <img
+              src={shareImageUrl}
+              alt="方言江湖官方认证证书"
+              className="max-w-[90vw] max-h-[65vh] rounded-xl shadow-2xl border-2 border-red-800/50"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {/* 底部关闭提示 */}
+            <button
+              onClick={() => setShareImageUrl(null)}
+              className="mt-6 px-8 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold border border-gray-700 hover:bg-gray-700 transition-colors"
+            >
+              ✕ 关闭
+            </button>
+          </div>
+        )}
       </div>
     );
   }
