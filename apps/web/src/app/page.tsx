@@ -1,183 +1,306 @@
 'use client';
 
 import Link from 'next/link';
-import { Flame, Map, Trophy, Shuffle, Zap, Users, MessageSquare, Mic } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { rankingApi, curseApi } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { Flame, Trophy, Search, Zap, Shuffle, MapPin, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { provinceRankingData, curseEntries, statsData, getRandomEntry, searchEntries, type CurseEntry } from '@/lib/mock-data';
 import { formatNumber } from '@/lib/utils';
 
-export default function HomePage() {
-  const { data: stats } = useQuery({
-    queryKey: ['curse-stats'],
-    queryFn: () => curseApi.getStats().then(res => res.data),
-  });
+// 辣度图标
+function SpicyLevel({ level }: { level: number }) {
+  return <span className="text-sm">{'🌶️'.repeat(level)}</span>;
+}
 
-  const { data: provinceRanking } = useQuery({
-    queryKey: ['province-ranking'],
-    queryFn: () => rankingApi.getProvinceRanking().then(res => res.data),
-  });
+// 骂语卡片组件
+function CurseCard({ entry, index }: { entry: CurseEntry; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.4 }}
+      className="curse-card group cursor-pointer"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-2xl font-bold text-white group-hover:text-orange-400 transition-colors">
+          {entry.content}
+        </span>
+        <SpicyLevel level={entry.spicyLevel} />
+      </div>
+      <p className="text-orange-300/70 text-sm mb-2">{entry.pinyin}</p>
+      <p className="text-gray-400 text-sm mb-3">{entry.meaning}</p>
+      <div className="flex items-center justify-between text-xs text-gray-500">
+        <span className="flex items-center gap-1">
+          <MapPin className="w-3 h-3" />
+          {entry.province} · {entry.county}
+        </span>
+        <span>❤️ {entry.likes.toLocaleString()}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function HomePage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<CurseEntry[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [hotEntries, setHotEntries] = useState<CurseEntry[]>([]);
+  const [currentSlogan, setCurrentSlogan] = useState(0);
+
+  const slogans = [
+    '看看你们那旮旯怎么骂人的？',
+    '全国方言毒舌大赏',
+    '收录各地特色方言表达',
+    '骂出风采，骂出非物质文化遗产',
+  ];
+
+  // 加载热门词条
+  useEffect(() => {
+    const sorted = [...curseEntries].sort((a, b) => b.likes - a.likes).slice(0, 6);
+    setHotEntries(sorted);
+  }, []);
+
+  // Slogan 轮播
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlogan(prev => (prev + 1) % slogans.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 搜索处理
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim().length > 0) {
+      setSearchResults(searchEntries(query).slice(0, 5));
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
+  };
 
   return (
-    <div>
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-orange-50 via-white to-amber-50 py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(249,115,22,0.1),transparent_50%)]" />
-        <div className="container mx-auto px-4 relative">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        {/* 背景效果 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(249,115,22,0.15),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(239,68,68,0.1),transparent_60%)]" />
+
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm mb-6">
-              <Flame className="w-4 h-4" />
-              <span>中国方言文化数字博物馆</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            {/* Logo */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+              className="inline-flex items-center gap-3 mb-6"
+            >
+              <Flame className="w-12 h-12 text-orange-500 flame-flicker" />
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-5xl md:text-7xl font-black mb-4 text-gradient"
+            >
               方言江湖
-            </h1>
-            <p className="text-xl text-gray-600 mb-2">
-              骂出风采，骂出水平，骂出非物质文化遗产
-            </p>
-            <p className="text-gray-500 mb-8">
-              收录全国各地特色方言表达，以县为单位展示方言文化多样性
-            </p>
+            </motion.h1>
+
+            {/* 轮播 Slogan */}
+            <div className="h-8 mb-8 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={currentSlogan}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="text-lg text-gray-400"
+                >
+                  {slogans[currentSlogan]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+
+            {/* 搜索框 */}
+            <div className="relative max-w-xl mx-auto mb-10">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="搜搜你的家乡怎么骂人的..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => searchQuery && setShowResults(true)}
+                  onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-800/80 backdrop-blur border border-gray-700 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-lg"
+                />
+              </div>
+
+              {/* 搜索结果下拉 */}
+              {showResults && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
+                  {searchResults.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="px-4 py-3 hover:bg-gray-700 transition-colors cursor-pointer border-b border-gray-700/50 last:border-0"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">{entry.content}</span>
+                        <SpicyLevel level={entry.spicyLevel} />
+                      </div>
+                      <p className="text-sm text-gray-400 mt-1">{entry.meaning}</p>
+                      <span className="text-xs text-gray-500">{entry.province} · {entry.county}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 热门搜索标签 */}
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                {['四川', '广东', '东北', '湖南', '上海'].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => handleSearch(tag)}
+                    className="px-3 py-1 text-xs bg-gray-800 text-gray-400 rounded-full hover:bg-orange-500/20 hover:text-orange-400 transition-all"
+                  >
+                    🔥 {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA 按钮 */}
             <div className="flex flex-wrap justify-center gap-4">
               <Link
                 href="/ranking"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:from-orange-600 hover:to-red-600 transition-all shadow-lg shadow-orange-500/25 glow-pulse"
               >
                 <Trophy className="w-5 h-5" />
                 查看战力榜
               </Link>
               <Link
-                href="/map"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                href="/audio"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 text-orange-400 border border-gray-700 rounded-xl font-medium hover:bg-gray-700 hover:border-orange-500/50 transition-all"
               >
-                <Map className="w-5 h-5" />
-                方言地图
+                🔔 敲木鱼
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-12 bg-white border-b">
+      {/* 数据统计 */}
+      <section className="py-10 bg-gray-900/50 border-y border-gray-800">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{formatNumber(stats?.totalEntries || 0)}</div>
-              <div className="text-sm text-gray-500 mt-1">收录词条</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{formatNumber(stats?.totalVoices || 0)}</div>
-              <div className="text-sm text-gray-500 mt-1">语音数量</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{stats?.byProvince?.length || 0}</div>
-              <div className="text-sm text-gray-500 mt-1">覆盖省份</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{formatNumber(stats?.totalUsers || 0)}</div>
-              <div className="text-sm text-gray-500 mt-1">注册用户</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center mb-10">核心功能</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Link href="/ranking" className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <Trophy className="w-6 h-6 text-primary" />
+            {[
+              { label: '收录词条', value: statsData.totalEntries, icon: '📝' },
+              { label: '语音数量', value: statsData.totalVoices, icon: '🎤' },
+              { label: '覆盖省份', value: statsData.totalProvinces, icon: '🗺️' },
+              { label: '累计访问', value: statsData.totalUsers, icon: '👥' },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-2xl mb-1">{stat.icon}</div>
+                <div className="text-2xl md:text-3xl font-bold text-gradient">{formatNumber(stat.value)}</div>
+                <div className="text-sm text-gray-500 mt-1">{stat.label}</div>
               </div>
-              <h3 className="text-lg font-semibold mb-2">全国县级战力榜</h3>
-              <p className="text-gray-600 text-sm">以县为单位，综合词条数量、语音贡献等维度，评选各地方言战力值</p>
-            </Link>
-
-            <Link href="/audio" className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-orange-200 transition-colors">
-                <Zap className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">赛博方言木鱼</h3>
-              <p className="text-gray-600 text-sm">点击释放压力，随机播放各地特色方言表达，让坏心情烟消云散</p>
-            </Link>
-
-            <Link href="/random" className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-200 transition-colors">
-                <Shuffle className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">随便看看</h3>
-              <p className="text-gray-600 text-sm">随机跳转到全国任意县市的方言页面，发现意想不到的方言趣味</p>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Province Ranking Preview */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold">省级战力榜</h2>
-            <Link href="/ranking" className="text-primary text-sm font-medium hover:underline">
-              查看完整榜单 →
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {provinceRanking?.slice(0, 6).map((item: { rank: number; province: string; totalEntries: number; totalVoices: number }, index: number) => (
-              <Link
-                key={item.province}
-                href={`/ranking?province=${encodeURIComponent(item.province)}`}
-                className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                  index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                  index === 1 ? 'bg-gray-200 text-gray-600' :
-                  index === 2 ? 'bg-orange-100 text-orange-700' :
-                  'bg-gray-100 text-gray-500'
-                }`}>
-                  {item.rank}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{item.province}</div>
-                  <div className="text-xs text-gray-500">
-                    {item.totalEntries} 词条 · {item.totalVoices} 语音
-                  </div>
-                </div>
-              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Quick Actions */}
-      <section className="py-16 bg-gradient-to-br from-primary/5 to-amber-50">
+      {/* 今日热词 */}
+      <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center mb-10">参与贡献</h2>
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <Link
-              href="/upload"
-              className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Mic className="w-7 h-7 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">上传家乡语音</h3>
-                <p className="text-sm text-gray-500">用你的声音传承方言文化</p>
-              </div>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              🔥 热门毒舌
+            </h2>
+            <Link href="/ranking" className="text-orange-400 text-sm hover:underline flex items-center gap-1">
+              更多 <ChevronRight className="w-4 h-4" />
             </Link>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {hotEntries.map((entry, index) => (
+              <CurseCard key={entry.id} entry={entry} index={index} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <Link
-              href="/search"
-              className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center">
-                <MessageSquare className="w-7 h-7 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold mb-1">纠错与建议</h3>
-                <p className="text-sm text-gray-500">帮助完善方言数据库</p>
-              </div>
+      {/* 省级战力榜预览 */}
+      <section className="py-16 bg-gray-900/30">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              🏆 省级战力榜 Top 10
+            </h2>
+            <Link href="/ranking" className="text-orange-400 text-sm hover:underline flex items-center gap-1">
+              完整榜单 <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {provinceRankingData.slice(0, 10).map((item, index) => (
+              <motion.div
+                key={item.province}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Link
+                  href={`/ranking?province=${encodeURIComponent(item.province)}`}
+                  className="flex items-center gap-4 p-4 bg-gray-800/50 backdrop-blur rounded-xl hover:bg-gray-800 transition-all group border border-gray-800 hover:border-orange-500/30"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                    index === 0 ? 'bg-yellow-500/20 text-yellow-400' :
+                    index === 1 ? 'bg-gray-400/20 text-gray-300' :
+                    index === 2 ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-gray-700 text-gray-400'
+                  }`}>
+                    {index < 3 ? ['🥇', '🥈', '🥉'][index] : item.rank}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-white">{item.province}</span>
+                      <span className="text-xs text-gray-500">"{item.representative}"</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="power-bar"
+                          style={{ width: `${(item.totalPower / 100) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-bold text-orange-400 w-12 text-right">{item.totalPower}</span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 核心功能入口 */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-6">
+            <Link href="/ranking" className="group curse-card text-center py-8">
+              <div className="text-4xl mb-4">🏆</div>
+              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">全国战力榜</h3>
+              <p className="text-gray-400 text-sm">谁才是全国最会骂人的地方？</p>
+            </Link>
+            <Link href="/audio" className="group curse-card text-center py-8">
+              <div className="text-4xl mb-4 animate-float">🔔</div>
+              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">敲木鱼</h3>
+              <p className="text-gray-400 text-sm">敲一下出一个骂人的词</p>
+            </Link>
+            <Link href="/random" className="group curse-card text-center py-8">
+              <div className="text-4xl mb-4">🎲</div>
+              <h3 className="text-lg font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">随便看看</h3>
+              <p className="text-gray-400 text-sm">随机探索全国各地方言趣味</p>
             </Link>
           </div>
         </div>

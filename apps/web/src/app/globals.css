@@ -2,53 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+
 @layer base {
   * {
     @apply border-gray-200;
   }
   body {
-    @apply bg-white text-gray-900;
+    @apply bg-gray-950 text-gray-100;
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* 自定义滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { @apply bg-gray-900; }
+::-webkit-scrollbar-thumb { @apply bg-gray-700 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-gray-600; }
+
+/* 辣度颜色 */
+.spicy-1 { @apply text-yellow-300; }
+.spicy-2 { @apply text-yellow-400; }
+.spicy-3 { @apply text-orange-400; }
+.spicy-4 { @apply text-orange-500; }
+.spicy-5 { @apply text-red-500; }
+
+/* 骂语卡片 */
+.curse-card {
+  @apply bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-lg border border-gray-700/50 rounded-2xl p-5 transition-all duration-300;
+}
+.curse-card:hover {
+  @apply border-orange-500/50 shadow-lg shadow-orange-500/10 -translate-y-1;
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+/* 木鱼敲击动画 */
+@keyframes muyuHit {
+  0% { transform: scale(1); }
+  15% { transform: scale(0.9); }
+  40% { transform: scale(1.05); }
+  60% { transform: scale(0.98); }
+  100% { transform: scale(1); }
 }
+.muyu-hit { animation: muyuHit 0.4s ease-out; }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+/* 卡片弹出动画 */
+@keyframes cardPopIn {
+  0% { opacity: 0; transform: scale(0.5) translateY(40px); }
+  60% { transform: scale(1.05) translateY(-5px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
+.card-pop-in { animation: cardPopIn 0.5s ease-out forwards; }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+/* 火焰闪烁 */
+@keyframes flameFlicker {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  25% { opacity: 0.8; transform: scaleY(1.1); }
+  50% { opacity: 1; transform: scaleY(0.95); }
+  75% { opacity: 0.9; transform: scaleY(1.05); }
 }
+.flame-flicker { animation: flameFlicker 1.5s ease-in-out infinite; }
 
-/* Spicy level colors */
-.spicy-level-1 { background-color: #fef3c7; }
-.spicy-level-2 { background-color: #fde68a; }
-.spicy-level-3 { background-color: #fcd34d; }
-.spicy-level-4 { background-color: #fb923c; color: white; }
-.spicy-level-5 { background-color: #ef4444; color: white; }
-
-/* Danmu animation */
+/* 弹幕动画 */
+@keyframes danmuMove {
+  from { transform: translateX(100vw); }
+  to { transform: translateX(-100%); }
+}
 .danmu-item {
   animation: danmuMove linear forwards;
   white-space: nowrap;
   position: absolute;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-@keyframes danmuMove {
-  from {
-    transform: translateX(100vw);
-  }
-  to {
-    transform: translateX(-100%);
-  }
+/* 发光效果 */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.6), 0 0 60px rgba(249, 115, 22, 0.2); }
+}
+.glow-pulse { animation: glowPulse 2s ease-in-out infinite; }
+
+/* 浮动动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+/* 渐变文字 */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-400 to-amber-400;
+}
+
+/* 战力条 */
+.power-bar {
+  @apply h-2 rounded-full bg-gradient-to-r from-orange-500 to-red-500;
+  transition: width 1s ease-out;
 }

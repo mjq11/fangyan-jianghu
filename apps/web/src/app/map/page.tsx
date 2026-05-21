@@ -1,169 +1,199 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { rankingApi } from '@/lib/api';
-import { MapPin, ZoomIn, ZoomOut, Info } from 'lucide-react';
+import { MapPin, Flame } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { provinceRankingData, getEntriesByProvince } from '@/lib/mock-data';
+
+// 简化的省份位置映射（相对位置，用于网格布局展示）
+const provinceLayout: { name: string; row: number; col: number }[] = [
+  { name: '黑龙江', row: 0, col: 6 }, { name: '吉林', row: 1, col: 6 },
+  { name: '辽宁', row: 2, col: 6 }, { name: '内蒙古', row: 0, col: 3 },
+  { name: '新疆', row: 1, col: 0 }, { name: '甘肃', row: 2, col: 2 },
+  { name: '宁夏', row: 2, col: 3 }, { name: '北京', row: 1, col: 5 },
+  { name: '天津', row: 2, col: 5 }, { name: '河北', row: 1, col: 4 },
+  { name: '山西', row: 2, col: 4 }, { name: '山东', row: 3, col: 5 },
+  { name: '河南', row: 3, col: 4 }, { name: '陕西', row: 3, col: 3 },
+  { name: '四川', row: 3, col: 2 }, { name: '重庆', row: 4, col: 3 },
+  { name: '湖北', row: 4, col: 4 }, { name: '安徽', row: 3, col: 5 },
+  { name: '江苏', row: 3, col: 6 }, { name: '上海', row: 3, col: 7 },
+  { name: '浙江', row: 4, col: 6 }, { name: '江西', row: 4, col: 5 },
+  { name: '湖南', row: 5, col: 4 }, { name: '贵州', row: 5, col: 3 },
+  { name: '云南', row: 5, col: 2 }, { name: '广西', row: 6, col: 3 },
+  { name: '广东', row: 6, col: 4 }, { name: '福建', row: 5, col: 5 },
+  { name: '海南', row: 7, col: 4 },
+];
 
 export default function MapPage() {
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
 
-  const { data: provinceRanking, isLoading } = useQuery({
-    queryKey: ['province-ranking'],
-    queryFn: () => rankingApi.getProvinceRanking().then(res => res.data),
-  });
+  const maxPower = Math.max(...provinceRankingData.map(p => p.totalPower));
 
-  const { data: countyRanking } = useQuery({
-    queryKey: ['county-ranking'],
-    queryFn: () => rankingApi.getCountyRanking({ limit: 100 }).then(res => res.data),
-    enabled: !!selectedProvince,
-  });
+  const getHeatColor = (province: string) => {
+    const data = provinceRankingData.find(p => p.province === province);
+    if (!data) return 'bg-gray-700';
+    const ratio = data.totalPower / maxPower;
+    if (ratio > 0.85) return 'bg-red-500';
+    if (ratio > 0.7) return 'bg-orange-500';
+    if (ratio > 0.55) return 'bg-amber-500';
+    if (ratio > 0.4) return 'bg-yellow-500';
+    return 'bg-gray-600';
+  };
 
-  const maxPower = Math.max(...(provinceRanking?.map((p: { totalPower: number }) => p.totalPower) || [1]));
+  const selectedData = selectedProvince
+    ? provinceRankingData.find(p => p.province === selectedProvince)
+    : null;
+  const selectedEntries = selectedProvince ? getEntriesByProvince(selectedProvince) : [];
 
-  const getHeatColor = (power: number) => {
-    const intensity = power / maxPower;
-    if (intensity > 0.8) return 'bg-red-500';
-    if (intensity > 0.6) return 'bg-orange-500';
-    if (intensity > 0.4) return 'bg-amber-500';
-    if (intensity > 0.2) return 'bg-yellow-500';
-    return 'bg-gray-300';
+  // 合并东北三省的搜索
+  const findProvinceData = (name: string) => {
+    if (['黑龙江', '吉林', '辽宁'].includes(name)) {
+      return provinceRankingData.find(p => p.province === name) || provinceRankingData.find(p => p.province === '东北三省');
+    }
+    return provinceRankingData.find(p => p.province === name);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-primary/10 to-amber-50 py-12">
+    <div className="min-h-screen">
+      {/* 页头 */}
+      <div className="bg-gradient-to-r from-orange-500/10 via-gray-900 to-red-500/10 py-10 border-b border-gray-800">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-2">中国方言地图</h1>
-          <p className="text-gray-600">点击省份查看详细战力数据</p>
+          <h1 className="text-3xl font-black text-gradient mb-2">🗺️ 中国方言毒舌地图</h1>
+          <p className="text-gray-500">点击省份，查看当地最有杀伤力的方言</p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Map Visualization (Simplified) */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
+          {/* 地图区域 */}
+          <div className="lg:col-span-2 bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-2xl p-6">
+            <h2 className="font-bold mb-4 flex items-center gap-2 text-white">
+              <Flame className="w-5 h-5 text-orange-400" />
               战力热力图
             </h2>
 
-            <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden">
-              {/* Simplified grid visualization */}
-              <div className="absolute inset-0 p-4">
-                <div className="grid grid-cols-8 grid-rows-4 gap-1 h-full">
-                  {provinceRanking?.slice(0, 32).map((p: { province: string; totalPower: number; rank: number }, index: number) => (
+            {/* 省份网格地图 */}
+            <div className="relative" style={{ minHeight: '400px' }}>
+              <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(8, 1fr)', gridTemplateRows: 'repeat(8, 1fr)' }}>
+                {provinceLayout.map((p) => {
+                  const data = findProvinceData(p.name);
+                  const isSelected = selectedProvince === p.name;
+                  return (
                     <motion.button
-                      key={p.province}
-                      whileHover={{ scale: 1.05, zIndex: 10 }}
-                      onClick={() => setSelectedProvince(p.province)}
-                      className={`${getHeatColor(p.totalPower)} rounded-lg flex items-center justify-center text-white text-xs font-medium opacity-80 hover:opacity-100 transition-opacity shadow-sm`}
-                      title={`${p.province} - 排名 #${p.rank}`}
+                      key={p.name}
+                      whileHover={{ scale: 1.1, zIndex: 10 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedProvince(p.name)}
+                      className={`${getHeatColor(p.name)} rounded-lg py-3 px-1 text-white text-xs font-bold opacity-80 hover:opacity-100 transition-all shadow-sm ${
+                        isSelected ? 'ring-2 ring-orange-400 opacity-100' : ''
+                      }`}
+                      style={{ gridColumn: p.col + 1, gridRow: p.row + 1 }}
+                      title={`${p.name} - ${data ? '排名 #' + data.rank : '暂无数据'}`}
                     >
-                      {p.province.slice(0, 2)}
+                      {p.name.slice(0, 2)}
                     </motion.button>
-                  )) || Array.from({ length: 32 }).map((_, i) => (
-                    <div key={i} className="bg-gray-200 rounded-lg" />
-                  ))}
-                </div>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Legend */}
-              <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur rounded-lg p-3 shadow-sm">
-                <div className="text-xs text-gray-500 mb-2">战力强度</div>
-                <div className="flex gap-1">
-                  <div className="w-6 h-4 bg-gray-300 rounded" />
-                  <div className="w-6 h-4 bg-yellow-500 rounded" />
-                  <div className="w-6 h-4 bg-amber-500 rounded" />
-                  <div className="w-6 h-4 bg-orange-500 rounded" />
-                  <div className="w-6 h-4 bg-red-500 rounded" />
-                </div>
-              </div>
-
-              {/* Info tooltip */}
-              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-lg p-3 shadow-sm">
-                <div className="flex items-center gap-2 text-sm">
-                  <Info className="w-4 h-4 text-primary" />
-                  <span>共收录 {provinceRanking?.length || 0} 个省份</span>
-                </div>
-              </div>
+            {/* 图例 */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+              <span className="text-gray-500">战力：</span>
+              <span className="flex items-center gap-1"><span className="w-4 h-3 bg-gray-600 rounded" /> 低</span>
+              <span className="flex items-center gap-1"><span className="w-4 h-3 bg-yellow-500 rounded" /></span>
+              <span className="flex items-center gap-1"><span className="w-4 h-3 bg-amber-500 rounded" /></span>
+              <span className="flex items-center gap-1"><span className="w-4 h-3 bg-orange-500 rounded" /></span>
+              <span className="flex items-center gap-1"><span className="w-4 h-3 bg-red-500 rounded" /> 高</span>
             </div>
           </div>
 
-          {/* Province List */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="font-semibold mb-4">省级战力榜</h2>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {provinceRanking?.map((p: { rank: number; province: string; totalEntries: number; totalVoices: number; totalPower: number }) => (
+          {/* 省级战力榜 */}
+          <div className="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-2xl p-6">
+            <h2 className="font-bold mb-4 text-white">🏆 省级战力榜</h2>
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {provinceRankingData.map((p) => (
                 <button
                   key={p.province}
                   onClick={() => setSelectedProvince(p.province)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
                     selectedProvince === p.province
-                      ? 'bg-primary/10 border border-primary'
-                      : 'hover:bg-gray-50'
+                      ? 'bg-orange-500/20 border border-orange-500/50'
+                      : 'hover:bg-gray-700/50 border border-transparent'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    p.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
-                    p.rank === 2 ? 'bg-gray-200 text-gray-600' :
-                    p.rank === 3 ? 'bg-orange-100 text-orange-700' :
-                    'bg-gray-100 text-gray-500'
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                    p.rank <= 3 ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-700 text-gray-500'
                   }`}>
-                    {p.rank}
+                    {p.rank <= 3 ? ['🥇', '🥈', '🥉'][p.rank - 1] : p.rank}
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{p.province}</div>
-                    <div className="text-xs text-gray-500">
-                      {p.totalEntries} 词条 · {p.totalVoices} 语音
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-white">{p.province}</div>
+                    <div className="text-xs text-gray-500">{p.totalEntries} 词条</div>
                   </div>
+                  <span className="text-sm font-bold text-orange-400">{p.totalPower}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Selected Province Detail */}
-        {selectedProvince && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 bg-white rounded-2xl p-6 shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">{selectedProvince} 县级战力榜</h2>
-              <Link
-                href={`/ranking?province=${encodeURIComponent(selectedProvince)}`}
-                className="text-primary text-sm font-medium hover:underline"
-              >
-                查看全部 →
-              </Link>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {countyRanking?.items?.slice(0, 8).map((item: { rank: number; county: string; city: string; powerValue: number; totalEntries: number }) => (
+        {/* 选中省份详情 */}
+        <AnimatePresence>
+          {selectedData && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="mt-8 bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-2xl p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white">
+                  {selectedProvince} <span className="text-orange-400">· 战力 {selectedData.totalPower}</span>
+                </h2>
                 <Link
-                  key={item.county}
-                  href={`/county/${encodeURIComponent(selectedProvince)}-${encodeURIComponent(item.county)}`}
-                  className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  href={`/ranking?province=${encodeURIComponent(selectedProvince!)}`}
+                  className="text-orange-400 text-sm hover:underline"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      item.rank <= 3 ? 'bg-primary/10 text-primary' : 'bg-gray-200 text-gray-500'
-                    }`}>
-                      {item.rank}
-                    </span>
-                    <span className="font-medium text-sm">{item.county}</span>
-                  </div>
-                  <div className="text-xs text-gray-500">{item.city}</div>
-                  <div className="mt-2 text-lg font-bold text-primary">{item.powerValue.toFixed(1)}</div>
+                  查看完整榜单 →
                 </Link>
-              ))}
-            </div>
-          </motion.div>
-        )}
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-3 mb-4">
+                <div className="bg-gray-900/50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-gradient">{selectedData.totalEntries}</div>
+                  <div className="text-sm text-gray-500">词条数</div>
+                </div>
+                <div className="bg-gray-900/50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-gradient">{selectedData.totalVoices}</div>
+                  <div className="text-sm text-gray-500">语音数</div>
+                </div>
+              </div>
+
+              <h3 className="font-bold text-white mb-3">🌶️ 代表性毒舌语录</h3>
+              {selectedEntries.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-3">
+                  {selectedEntries.slice(0, 4).map((entry) => (
+                    <div key={entry.id} className="curse-card">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-white">{entry.content}</span>
+                        <span className="text-sm">{'🌶️'.repeat(entry.spicyLevel)}</span>
+                      </div>
+                      <p className="text-orange-300/60 text-xs mb-1">{entry.pinyin}</p>
+                      <p className="text-gray-400 text-sm">{entry.meaning}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <p>暂无该省详细数据</p>
+                  <p className="text-sm mt-1">代表骂语："{selectedData.representative}"</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

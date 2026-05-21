@@ -1,155 +1,73 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { curseApi } from '@/lib/api';
-import { formatNumber, getSpicyColor, getSpicyLabel } from '@/lib/utils';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, MapPin } from 'lucide-react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
-
-const PRESET_KEYWORDS = ['锤子', '瓜娃子', '牛逼', '彪子', '傻逼'];
+import { searchEntries, type CurseEntry } from '@/lib/mock-data';
 
 function SearchContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [keyword, setKeyword] = useState(searchParams.get('q') || '');
-  const [debouncedKeyword, setDebouncedKeyword] = useState(keyword);
+  const [results, setResults] = useState<CurseEntry[]>([]);
+  const [searched, setSearched] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedKeyword(keyword);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [keyword]);
-
-  const { data: searchResults, isLoading } = useQuery({
-    queryKey: ['search', debouncedKeyword],
-    queryFn: () => curseApi.getAll({ keyword: debouncedKeyword, limit: 50 }).then(res => res.data),
-    enabled: debouncedKeyword.length > 0,
-  });
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (keyword.trim()) {
-      router.push(`/search?q=${encodeURIComponent(keyword)}`);
+  const handleSearch = (kw: string) => {
+    setKeyword(kw);
+    if (kw.trim()) {
+      setResults(searchEntries(kw));
+      setSearched(true);
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="bg-white border-b">
-        <div className="max-w-3xl">
-          <form onSubmit={handleSearch} className="flex gap-3">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-lg"
-                placeholder="搜索方言词条、含义..."
-              />
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            </div>
-            <button
-              type="submit"
-              className="px-6 py-4 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
-            >
-              搜索
+      <form onSubmit={(e) => { e.preventDefault(); handleSearch(keyword); }} className="max-w-2xl mx-auto mb-8">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <input
+            type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 bg-gray-800/80 border border-gray-700 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 text-lg"
+            placeholder="搜索方言词条..."
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 mt-4">
+          {['四川', '广东', '东北', '湖南', '上海', '北京', '重庆'].map((kw) => (
+            <button key={kw} type="button" onClick={() => handleSearch(kw)}
+              className="px-3 py-1 text-xs bg-gray-800 text-gray-400 rounded-full hover:bg-orange-500/20 hover:text-orange-400 transition-all">
+              🔥 {kw}
             </button>
-          </form>
+          ))}
+        </div>
+      </form>
 
-          <div className="flex flex-wrap gap-2 mt-4 pb-4">
-            <span className="text-sm text-gray-500">热门搜索：</span>
-            {PRESET_KEYWORDS.map((kw) => (
-              <button
-                key={kw}
-                onClick={() => {
-                  setKeyword(kw);
-                  router.push(`/search?q=${encodeURIComponent(kw)}`);
-                }}
-                className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors"
-              >
-                {kw}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="text-center py-16">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-gray-500">搜索中...</p>
-        </div>
-      ) : !debouncedKeyword ? (
-        <div className="text-center py-16">
-          <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">输入关键词开始搜索</p>
-          <p className="text-sm text-gray-400 mt-2">可以搜索方言词、含义、拼音等</p>
-        </div>
-      ) : searchResults?.items?.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-500">未找到相关结果</p>
-          <p className="text-sm text-gray-400 mt-2">换个关键词试试？</p>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-gray-600">
-              找到 <span className="font-bold text-primary">{searchResults?.pagination?.total || 0}</span> 条结果
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {searchResults?.items?.map((entry: {
-              id: string;
-              content: string;
-              pinyin: string;
-              meaning: string;
-              province: string;
-              city: string;
-              county: string;
-              spicyLevel: number;
-              likeCount: number;
-            }) => (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">{entry.content}</h3>
-                      <span
-                        className="px-2 py-0.5 rounded text-xs font-medium"
-                        style={{
-                          backgroundColor: getSpicyColor(entry.spicyLevel),
-                          color: entry.spicyLevel >= 4 ? 'white' : 'inherit',
-                        }}
-                      >
-                        {getSpicyLabel(entry.spicyLevel)}
-                      </span>
-                    </div>
-                    <p className="text-gray-500 text-sm mb-2">{entry.pinyin}</p>
-                    <p className="text-gray-600">{entry.meaning}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-3">
-                      <MapPin className="w-4 h-4" />
-                      <span>{entry.province} · {entry.county}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{entry.likeCount}</div>
-                    <div className="text-xs text-gray-500">点赞</div>
-                  </div>
+      {searched && (
+        <div className="max-w-2xl mx-auto">
+          <p className="text-gray-400 mb-4">找到 <span className="text-orange-400 font-bold">{results.length}</span> 条结果</p>
+          <div className="space-y-3">
+            {results.map((entry) => (
+              <motion.div key={entry.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="curse-card">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-xl font-bold text-white">{entry.content}</h3>
+                  <span>{'🌶️'.repeat(entry.spicyLevel)}</span>
+                </div>
+                <p className="text-orange-300/60 text-sm mb-1">{entry.pinyin}</p>
+                <p className="text-gray-400 text-sm mb-2">{entry.meaning}</p>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <MapPin className="w-3 h-3" /> {entry.province} · {entry.county}
                 </div>
               </motion.div>
             ))}
+            {results.length === 0 && <p className="text-center text-gray-500 py-8">未找到相关结果，换个关键词试试？</p>}
           </div>
-        </>
+        </div>
+      )}
+
+      {!searched && (
+        <div className="text-center py-16">
+          <Search className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+          <p className="text-gray-500">输入关键词搜索方言词条</p>
+        </div>
       )}
     </div>
   );
@@ -157,17 +75,13 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white">
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <Search className="w-6 h-6" />
-            搜索方言
-          </h1>
+    <div className="min-h-screen">
+      <div className="bg-gradient-to-r from-orange-500/10 via-gray-900 to-red-500/10 py-10 border-b border-gray-800">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-black text-gradient mb-2">🔍 搜索方言</h1>
         </div>
       </div>
-
-      <Suspense fallback={<div className="text-center py-16">加载中...</div>}>
+      <Suspense fallback={<div className="text-center py-16 text-gray-500">加载中...</div>}>
         <SearchContent />
       </Suspense>
     </div>
