@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Send, ChevronRight, CheckCircle } from 'lucide-react';
+import { MapPin, Send, ChevronRight, CheckCircle, Shield, Award } from 'lucide-react';
 import Link from 'next/link';
 import { getProvinces, getCitiesByProvince, getCountiesByCity } from '@/lib/regions';
 import { submitEntry, uploadVoice } from '@/lib/supabase';
@@ -29,7 +29,7 @@ export default function UploadPage() {
 
   // 状态
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedEntry, setSubmittedEntry] = useState<{ content: string; province: string; county: string } | null>(null);
+  const [submittedEntry, setSubmittedEntry] = useState<{ content: string; province: string; city: string; county: string } | null>(null);
 
   const provinces = getProvinces();
   const cities = province ? getCitiesByProvince(province) : [];
@@ -50,7 +50,7 @@ export default function UploadPage() {
         await uploadVoice(entry.id, audioBlob);
       }
 
-      setSubmittedEntry({ content, province, county });
+      setSubmittedEntry({ content, province, city, county });
       setStep('success');
     } catch (err) {
       alert('提交失败，请重试');
@@ -59,25 +59,88 @@ export default function UploadPage() {
     }
   };
 
+  // 生成认证编号
+  const certId = `FY-${Date.now().toString(36).toUpperCase()}`;
+
   if (step === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center"
+          className="max-w-lg w-full text-center"
         >
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-white mb-2">投稿成功！</h2>
           <p className="text-gray-400 mb-6">你的方言词条已提交，审核通过后将上线</p>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 mb-6">
-            <div className="text-3xl font-black text-gradient mb-2">{submittedEntry?.content}</div>
-            <div className="flex items-center justify-center gap-1 text-sm text-gray-500">
-              <MapPin className="w-4 h-4" />
-              {submittedEntry?.province} · {submittedEntry?.county}
+          {/* 官方认证卡片 */}
+          <motion.div
+            initial={{ opacity: 0, y: 30, rotateX: 15 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+            transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+            className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-orange-500/40 rounded-2xl p-8 mb-6 overflow-hidden"
+          >
+            {/* 底部装饰光晕 */}
+            <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
+
+            {/* 认证图标 */}
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.6, type: 'spring', stiffness: 150 }}
+              className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30"
+            >
+              <Shield className="w-10 h-10 text-white" />
+            </motion.div>
+
+            <h3 className="text-lg font-bold text-orange-400 mb-1">方言江湖官方认证</h3>
+            <p className="text-gray-500 text-xs mb-5">FANGYAN JIANGHU OFFICIAL CERTIFICATION</p>
+
+            {/* 认证内容 */}
+            <div className="bg-gray-950/60 border border-gray-700/50 rounded-xl p-5 mb-5">
+              <div className="text-3xl font-black text-white mb-3">
+                「{submittedEntry?.content}」
+              </div>
+              <div className="flex items-center justify-center gap-2 text-orange-400 font-medium">
+                <MapPin className="w-4 h-4" />
+                {submittedEntry?.province} · {submittedEntry?.city} · {submittedEntry?.county}
+              </div>
             </div>
-          </div>
+
+            {/* 认证地区标签 */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.9 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-full mb-4"
+            >
+              <Award className="w-4 h-4 text-orange-400" />
+              <span className="text-sm font-bold text-orange-300">
+                {submittedEntry?.province}{submittedEntry?.city}{submittedEntry?.county} 方言江湖官方认证
+              </span>
+            </motion.div>
+
+            {/* 认证编号与印章 */}
+            <div className="flex items-center justify-between text-xs text-gray-600 mt-4 pt-4 border-t border-gray-700/50">
+              <span>认证编号：{certId}</span>
+              <span>{new Date().toLocaleDateString('zh-CN')}</span>
+            </div>
+
+            {/* 印章动画 */}
+            <motion.div
+              initial={{ opacity: 0, scale: 2, rotate: 30 }}
+              animate={{ opacity: 0.15, scale: 1, rotate: -12 }}
+              transition={{ delay: 1.2, duration: 0.5 }}
+              className="absolute bottom-6 right-6 w-24 h-24 border-4 border-red-500 rounded-full flex items-center justify-center"
+            >
+              <div className="text-center">
+                <div className="text-red-500 text-xs font-black leading-tight">方言江湖</div>
+                <div className="text-red-500 text-[8px] font-bold">官方认证</div>
+              </div>
+            </motion.div>
+          </motion.div>
 
           <div className="flex gap-3 justify-center">
             <button
