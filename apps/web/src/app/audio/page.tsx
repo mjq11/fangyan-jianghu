@@ -10,30 +10,69 @@ function SpicyLevel({ level }: { level: number }) {
   return <span>{'🌶️'.repeat(level)}</span>;
 }
 
+import { Share2, Check, Sparkles } from 'lucide-react';
+
 // 弹出的骂语卡片
 function PopCard({ entry, index }: { entry: CurseEntry & { ts: number }; index: number }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    const copyText = `我刚在【方言江湖】敲木鱼超度自己，获得了由 [${entry.province}·${entry.county}] 官方认证的赛博国骂：『${entry.content}』(${entry.pinyin})！
+释义：${entry.meaning}
+真是笑发财了！速来测测你的家乡方言战力，在线敲木鱼消怨气 👉 https://mjq11.github.io/fangyan-jianghu/`;
+    
+    navigator.clipboard.writeText(copyText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.5, y: 40 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, x: index % 2 === 0 ? -100 : 100 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-lg border border-gray-700/50 rounded-2xl p-5 shadow-2xl shadow-orange-500/10"
+      className="bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-lg border-2 border-orange-500/30 rounded-2xl p-5 shadow-2xl shadow-orange-500/10 group relative overflow-hidden"
     >
+      <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/5 via-transparent to-transparent pointer-events-none" />
+      
       <div className="flex items-start justify-between mb-2">
-        <h3 className="text-2xl font-black text-white">{entry.content}</h3>
+        <h3 className="text-2xl font-black text-white group-hover:text-orange-400 transition-colors">「{entry.content}」</h3>
         <SpicyLevel level={entry.spicyLevel} />
       </div>
-      <p className="text-orange-300/60 text-sm mb-2">{entry.pinyin}</p>
-      <p className="text-gray-300 text-sm mb-3">{entry.meaning}</p>
-      {entry.scene && (
-        <span className="inline-block px-2 py-0.5 text-xs bg-orange-500/20 text-orange-400 rounded-full mb-2">
-          📍 {entry.scene}
-        </span>
-      )}
-      <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-        <MapPin className="w-3 h-3" />
-        {entry.province} · {entry.county}
+      <p className="text-orange-300/70 text-sm mb-2">{entry.pinyin}</p>
+      <p className="text-gray-300 text-sm mb-4 leading-relaxed">{entry.meaning}</p>
+      
+      <div className="flex items-center justify-between gap-2 mt-2 pt-3 border-t border-gray-700/50">
+        <div className="flex flex-col gap-1">
+          {entry.scene && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-orange-400">
+              📍 适用场景: {entry.scene}
+            </span>
+          )}
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <MapPin className="w-3 h-3" />
+            {entry.province} · {entry.county}
+          </div>
+        </div>
+
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg text-xs font-black shadow-md shadow-orange-500/20 active:scale-95 transition-all"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-green-300" />
+              已复制骚话!
+            </>
+          ) : (
+            <>
+              <Share2 className="w-3.5 h-3.5" />
+              分享此金句
+            </>
+          )}
+        </button>
       </div>
     </motion.div>
   );
@@ -158,18 +197,39 @@ export default function AudioPage() {
           {clickCount > 0 && (
             <motion.div
               key={clickCount}
-              initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -10 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.5 }}
-              className="flex gap-3 mb-6"
+              initial={{ opacity: 0, y: 15, scale: 0.8 }}
+              animate={{ opacity: 1, y: -20, scale: 1.1 }}
+              exit={{ opacity: 0, y: -45, scale: 0.9 }}
+              transition={{ duration: 0.4 }}
+              className="flex gap-2.5 mb-6 z-30"
             >
-              <span className="px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full text-red-400 text-sm font-bold">
-                压力 -1
-              </span>
-              <span className="px-3 py-1 bg-orange-500/20 border border-orange-500/50 rounded-full text-orange-400 text-sm font-bold">
-                毒舌 +1
-              </span>
+              {(() => {
+                const funnyStats = [
+                  { text: '功德 -999', color: 'bg-red-500/20 border-red-500/50 text-red-400' },
+                  { text: '怨气 -100%', color: 'bg-green-500/20 border-green-500/50 text-green-400' },
+                  { text: '赛博业障 +99', color: 'bg-purple-500/20 border-purple-500/50 text-purple-400' },
+                  { text: '嘴炮战力 +999', color: 'bg-orange-500/20 border-orange-500/50 text-orange-400' },
+                  { text: '键盘磨损 +1', color: 'bg-gray-500/20 border-gray-500/50 text-gray-400' },
+                  { text: '血压 -90%', color: 'bg-blue-500/20 border-blue-500/50 text-blue-400' },
+                  { text: '超度进度 +1%', color: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' },
+                ];
+                // 每次根据计数随机挑选两个展示
+                const index1 = (clickCount * 3) % funnyStats.length;
+                const index2 = (clickCount * 7 + 2) % funnyStats.length;
+                const stat1 = funnyStats[index1];
+                const stat2 = funnyStats[index2 !== index1 ? index2 : (index2 + 1) % funnyStats.length];
+
+                return (
+                  <>
+                    <span className={`px-3 py-1 border rounded-full text-xs font-black shadow-lg ${stat1.color}`}>
+                      {stat1.text}
+                    </span>
+                    <span className={`px-3 py-1 border rounded-full text-xs font-black shadow-lg ${stat2.color}`}>
+                      {stat2.text}
+                    </span>
+                  </>
+                );
+              })()}
             </motion.div>
           )}
         </AnimatePresence>

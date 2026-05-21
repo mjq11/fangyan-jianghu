@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Send, ChevronRight, CheckCircle, Shield, Award } from 'lucide-react';
+import { MapPin, Send, ChevronRight, CheckCircle, Shield, Award, Share2, Check } from 'lucide-react';
 import Link from 'next/link';
 import { getProvinces, getCitiesByProvince, getCountiesByCity } from '@/lib/regions';
 import { submitEntry, uploadVoice } from '@/lib/supabase';
@@ -10,6 +10,7 @@ import AudioRecorder from '@/components/AudioRecorder';
 
 export default function UploadPage() {
   const [step, setStep] = useState<'form' | 'success'>('form');
+  const [copied, setCopied] = useState(false);
 
   // 地区选择
   const [province, setProvince] = useState('');
@@ -62,6 +63,19 @@ export default function UploadPage() {
   // 生成认证编号
   const certId = `FY-${Date.now().toString(36).toUpperCase()}`;
 
+  const handleShare = () => {
+    const shareText = `【江湖告急！战力爆发！】💥
+我刚刚为 [${submittedEntry?.province}·${submittedEntry?.city}·${submittedEntry?.county}] 贡献了一发重量级方言毒舌暴梗：『${submittedEntry?.content}』！
+伤害值直接爆表！瞬间被【方言江湖】收录并授予「嘴强王者」官方战功认证！🏆
+听懂掌声，不服来战！阁下身上怨气这么重，敢不敢速来与我大战三百回合？
+速测家乡战力，赛博敲木鱼消怨气 👉 https://mjq11.github.io/fangyan-jianghu/`;
+
+    navigator.clipboard.writeText(shareText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   if (step === 'success') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -70,40 +84,40 @@ export default function UploadPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-lg w-full text-center"
         >
-          <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-white mb-2">投稿成功！</h2>
-          <p className="text-gray-400 mb-6">你的方言词条已提交，审核通过后将上线</p>
+          <div className="text-6xl mb-4">🏆</div>
+          <h2 className="text-3xl font-black text-white mb-2 text-gradient">战力大捷！录入成功</h2>
+          <p className="text-gray-400 mb-6">阁下的一发「嘴强暴击」已被载入史册，审核通过后上线</p>
 
           {/* 官方认证卡片 */}
           <motion.div
             initial={{ opacity: 0, y: 30, rotateX: 15 }}
             animate={{ opacity: 1, y: 0, rotateX: 0 }}
             transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-            className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-orange-500/40 rounded-2xl p-8 mb-6 overflow-hidden"
+            className="relative bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 border-2 border-red-500/50 rounded-2xl p-8 mb-6 overflow-hidden shadow-2xl shadow-red-500/10"
           >
             {/* 底部装饰光晕 */}
-            <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
+            <div className="absolute inset-0 bg-gradient-to-t from-red-500/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500" />
 
             {/* 认证图标 */}
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.6, type: 'spring', stiffness: 150 }}
-              className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30"
+              className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/30"
             >
-              <Shield className="w-10 h-10 text-white" />
+              <Shield className="w-10 h-10 text-white animate-pulse" />
             </motion.div>
 
-            <h3 className="text-lg font-bold text-orange-400 mb-1">方言江湖官方认证</h3>
-            <p className="text-gray-500 text-xs mb-5">FANGYAN JIANGHU OFFICIAL CERTIFICATION</p>
+            <h3 className="text-xl font-black text-red-500 mb-1">嘴强王者 · 官方特许认证</h3>
+            <p className="text-gray-500 text-xs mb-5 uppercase tracking-widest font-mono">Fangyan Jianghu Battle Medal</p>
 
             {/* 认证内容 */}
-            <div className="bg-gray-950/60 border border-gray-700/50 rounded-xl p-5 mb-5">
-              <div className="text-3xl font-black text-white mb-3">
-                「{submittedEntry?.content}」
+            <div className="bg-gray-900/90 border border-red-500/20 rounded-xl p-5 mb-5">
+              <div className="text-3xl font-black text-gradient from-red-400 to-orange-400 mb-3">
+                『{submittedEntry?.content}』
               </div>
-              <div className="flex items-center justify-center gap-2 text-orange-400 font-medium">
+              <div className="flex items-center justify-center gap-2 text-red-400 font-bold">
                 <MapPin className="w-4 h-4" />
                 {submittedEntry?.province} · {submittedEntry?.city} · {submittedEntry?.county}
               </div>
@@ -114,44 +128,64 @@ export default function UploadPage() {
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.9 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-full mb-4"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-full mb-4"
             >
-              <Award className="w-4 h-4 text-orange-400" />
-              <span className="text-sm font-bold text-orange-300">
-                {submittedEntry?.province}{submittedEntry?.city}{submittedEntry?.county} 方言江湖官方认证
+              <Award className="w-4 h-4 text-red-400" />
+              <span className="text-sm font-black text-red-300">
+                {submittedEntry?.province}{submittedEntry?.city}{submittedEntry?.county}「方言至尊杀手锏」
               </span>
             </motion.div>
 
             {/* 认证编号与印章 */}
-            <div className="flex items-center justify-between text-xs text-gray-600 mt-4 pt-4 border-t border-gray-700/50">
-              <span>认证编号：{certId}</span>
+            <div className="flex items-center justify-between text-xs text-gray-600 mt-4 pt-4 border-t border-gray-800/80">
+              <span>战斗序列：{certId}</span>
               <span>{new Date().toLocaleDateString('zh-CN')}</span>
             </div>
 
             {/* 印章动画 */}
             <motion.div
               initial={{ opacity: 0, scale: 2, rotate: 30 }}
-              animate={{ opacity: 0.15, scale: 1, rotate: -12 }}
+              animate={{ opacity: 0.25, scale: 1, rotate: -15 }}
               transition={{ delay: 1.2, duration: 0.5 }}
-              className="absolute bottom-6 right-6 w-24 h-24 border-4 border-red-500 rounded-full flex items-center justify-center"
+              className="absolute bottom-6 right-6 w-24 h-24 border-4 border-red-600 rounded-full flex items-center justify-center pointer-events-none"
             >
               <div className="text-center">
-                <div className="text-red-500 text-xs font-black leading-tight">方言江湖</div>
-                <div className="text-red-500 text-[8px] font-bold">官方认证</div>
+                <div className="text-red-600 text-xs font-black leading-tight">嘴强王者</div>
+                <div className="text-red-600 text-[8px] font-black tracking-widest">御笔封章</div>
               </div>
             </motion.div>
           </motion.div>
 
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col gap-3 max-w-sm mx-auto">
+            {/* 一键复制裂变分享战报按钮 */}
             <button
-              onClick={() => { setStep('form'); setContent(''); setPinyin(''); setMeaning(''); setScene(''); setAudioBlob(null); }}
-              className="px-5 py-3 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-colors"
+              onClick={handleShare}
+              className="w-full py-3.5 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-xl font-bold hover:from-red-700 hover:to-orange-600 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 active:scale-98 transition-all"
             >
-              继续投稿
+              {copied ? (
+                <>
+                  <Check className="w-5 h-5 text-green-300" />
+                  战报复制成功！速去群聊撕逼
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-5 h-5" />
+                  复制骚话战报 · 挑衅群友去
+                </>
+              )}
             </button>
-            <Link href="/" className="px-5 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all">
-              返回首页
-            </Link>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setStep('form'); setContent(''); setPinyin(''); setMeaning(''); setScene(''); setAudioBlob(null); }}
+                className="flex-1 py-3 bg-gray-800 text-gray-300 border border-gray-700 rounded-xl hover:bg-gray-700 font-bold transition-colors"
+              >
+                继续输出
+              </button>
+              <Link href="/" className="flex-1 py-3 bg-gray-800 text-gray-300 border border-gray-700 rounded-xl hover:bg-gray-700 font-bold flex items-center justify-center transition-colors">
+                返回首页
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>

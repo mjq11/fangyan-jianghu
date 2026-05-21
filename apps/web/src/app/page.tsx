@@ -46,13 +46,57 @@ export default function HomePage() {
   const [showResults, setShowResults] = useState(false);
   const [hotEntries, setHotEntries] = useState<CurseEntry[]>([]);
   const [currentSlogan, setCurrentSlogan] = useState(0);
+  const [bgDanmus, setBgDanmus] = useState<{ id: string; text: string; top: number; speed: number; delay: number }[]>([]);
 
   const slogans = [
-    '看看你们那旮旯怎么骂人的？',
-    '全国方言毒舌大赏',
-    '收录各地特色方言表达',
-    '骂出风采，骂出非物质文化遗产',
+    '🌶️ 四川人说“锤子哦”，你家乡谁能一战？',
+    '🥊 全国方言“嘴强王者”巅峰对决，火热撕逼中！',
+    '🤬 听说你们那里骂人特别好听？速来投稿自证清白！',
+    '🔔 检测到您赛博怨气过重，请火速前往「敲木鱼」超度自己',
+    '🏆 震撼！非物质文化「赛博口头禅」，看看你家乡排第几？',
   ];
+
+  // 经典江湖黑话弹幕库，用于背景随机漂移，极具视觉冲击力和网梗感
+  const classicShitTalk = [
+    '你在缩铲铲哦？', '丢雷楼谋！', '嘎哈呢一天天的', '你个瘪犊子', '脑壳有包',
+    '扑街仔！', '你算哪块小饼干', '憨批一个', '洗洗睡吧您勒', '顶你个肺！',
+    '小样，再瞅一个试试？', '信不信我抽你', '神戳戳的', '你个哈戳戳', '木脑壳',
+    '脑子是个好东西，希望你也有', '吃饱了撑的', '哈麻批', '边去，别碍事', '给爷整笑了'
+  ];
+
+  // 初始化背景弹幕
+  useEffect(() => {
+    const initialDanmus = Array.from({ length: 15 }).map((_, i) => ({
+      id: `init-${i}-${Math.random()}`,
+      text: classicShitTalk[Math.floor(Math.random() * classicShitTalk.length)],
+      top: 10 + (i * 6), // 均匀分布在不同高度
+      speed: 15 + Math.random() * 15, // 速度 15s - 30s
+      delay: Math.random() * -20, // 负延迟让其一进来就分布在屏幕各处
+    }));
+    setBgDanmus(initialDanmus);
+
+    // 定时补充新弹幕
+    const interval = setInterval(() => {
+      setBgDanmus(prev => {
+        const filtered = prev.filter(d => Math.random() > 0.05); // 随机移除旧的
+        if (filtered.length < 20) {
+          return [
+            ...filtered,
+            {
+              id: `${Date.now()}-${Math.random()}`,
+              text: classicShitTalk[Math.floor(Math.random() * classicShitTalk.length)],
+              top: Math.random() * 85 + 5,
+              speed: 18 + Math.random() * 15,
+              delay: 0,
+            }
+          ];
+        }
+        return filtered;
+      });
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // 加载热门词条
   useEffect(() => {
@@ -80,13 +124,42 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 overflow-hidden">
         {/* 背景效果 */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(249,115,22,0.15),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(239,68,68,0.1),transparent_60%)]" />
+
+        {/* 满屏飞舞的背景吐槽弹幕墙 */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0 opacity-[0.12]">
+          {bgDanmus.map((danmu) => (
+            <div
+              key={danmu.id}
+              className="absolute whitespace-nowrap text-lg md:text-2xl font-black text-orange-500 font-sans"
+              style={{
+                top: `${danmu.top}%`,
+                left: '100%',
+                animation: `marquee ${danmu.speed}s linear infinite`,
+                animationDelay: `${danmu.delay}s`,
+              }}
+            >
+              {danmu.text}
+            </div>
+          ))}
+        </div>
+
+        <style jsx global>{`
+          @keyframes marquee {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-150vw);
+            }
+          }
+        `}</style>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
@@ -109,14 +182,14 @@ export default function HomePage() {
             </motion.h1>
 
             {/* 轮播 Slogan */}
-            <div className="h-8 mb-8 overflow-hidden">
+            <div className="h-12 mb-8 overflow-hidden flex items-center justify-center">
               <AnimatePresence mode="wait">
                 <motion.p
                   key={currentSlogan}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="text-lg text-gray-400"
+                  className="text-lg md:text-xl font-bold text-orange-400/90"
                 >
                   {slogans[currentSlogan]}
                 </motion.p>
