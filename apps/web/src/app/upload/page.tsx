@@ -156,7 +156,7 @@ function UploadForm() {
                 <p className="text-gray-400 text-xs mb-3 leading-relaxed">
                   以下方言词条已由投稿人提交并通过平台初审，特此授予
                 </p>
-                <div className="text-3xl font-black bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent mb-3 py-1">
+                <div className="text-3xl font-black text-orange-400 mb-3 py-1">
                   『{submittedEntry?.content}』
                 </div>
                 <div className="flex items-center justify-center gap-2 text-red-400/90 font-bold text-sm">
