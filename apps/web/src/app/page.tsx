@@ -135,7 +135,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative py-16 md:py-24 overflow-hidden">
+      <section className="relative py-16 md:py-24 z-20">
         {/* 背景效果 */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(249,115,22,0.15),transparent_60%)]" />
@@ -206,7 +206,7 @@ export default function HomePage() {
             </div>
 
             {/* 搜索框 */}
-            <div className="relative max-w-xl mx-auto mb-10">
+            <div className="relative max-w-xl mx-auto mb-10 z-40">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
@@ -219,11 +219,10 @@ export default function HomePage() {
                   onKeyDown={handleKeyDown}
                   className="w-full pl-12 pr-4 py-4 bg-gray-800/80 backdrop-blur border border-gray-700 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-lg animate-glow"
                 />
-              </div>
 
-              {/* 搜索结果下拉：含收录关联点击与未收录极具病毒感的引导投稿 */}
-              {showResults && searchQuery.trim().length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-gray-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 text-left backdrop-blur-xl">
+                {/* 搜索结果下拉：紧贴输入框正下方，浮在热门标签之上 */}
+                {showResults && searchQuery.trim().length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-gray-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 text-left backdrop-blur-xl">
                   {searchResults.length > 0 ? (
                     <div>
                       <div className="px-4 py-2 bg-gray-800/50 text-[11px] font-black tracking-widest text-orange-400 uppercase border-b border-gray-800">
@@ -264,8 +263,9 @@ export default function HomePage() {
                       </button>
                     </div>
                   )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
 
               {/* 热门搜索标签 */}
               <div className="flex flex-wrap justify-center gap-2 mt-4">
