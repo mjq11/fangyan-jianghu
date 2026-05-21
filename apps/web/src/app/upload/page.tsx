@@ -166,17 +166,14 @@ function UploadForm() {
               </div>
 
               {/* 认证称号 */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.8 }}
+              <div
                 className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-red-950/80 to-orange-950/80 border border-red-700/40 rounded-full mb-5"
               >
                 <Award className="w-4 h-4 text-yellow-500" />
                 <span className="text-sm font-black text-red-300">
                   「嘴强王者 · {submittedEntry?.province}赛区」特许认证
                 </span>
-              </motion.div>
+              </div>
 
               {/* 底部信息栏：编号 + 日期 + 二维码 */}
               <div className="border-t border-red-900/30 pt-4 mt-2">
@@ -210,12 +207,10 @@ function UploadForm() {
                 </div>
               </div>
 
-              {/* 大印章 —— 右下角压盖 */}
-              <motion.div
-                initial={{ opacity: 0, scale: 3, rotate: 30 }}
-                animate={{ opacity: 0.35, scale: 1, rotate: -12 }}
-                transition={{ delay: 1.0, duration: 0.6, type: 'spring' }}
+              {/* 大印章 —— 右下角压盖（使用纯CSS，确保html2canvas能正确渲染） */}
+              <div
                 className="absolute bottom-16 right-10 w-32 h-32 border-[5px] border-red-600 rounded-full flex items-center justify-center pointer-events-none"
+                style={{ opacity: 0.35, transform: 'rotate(-12deg)' }}
               >
                 <div className="text-center">
                   <div className="text-red-600 text-base font-black leading-tight">方言江湖</div>
@@ -223,7 +218,7 @@ function UploadForm() {
                   <div className="w-8 h-px bg-red-600 mx-auto my-1" />
                   <div className="text-red-600 text-[7px] font-bold">CERTIFIED</div>
                 </div>
-              </motion.div>
+              </div>
 
             </div>
 
