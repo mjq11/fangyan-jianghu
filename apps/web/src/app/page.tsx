@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Flame, Trophy, Search, Zap, Shuffle, MapPin, ChevronRight } from 'lucide-react';
+import { Flame, Trophy, Search, MapPin, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { provinceRankingData, curseEntries, statsData, getRandomEntry, searchEntries, type CurseEntry } from '@/lib/mock-data';
+import { provinceRankingData, curseEntries, statsData, searchEntries, type CurseEntry } from '@/lib/mock-data';
 import { formatNumber } from '@/lib/utils';
 
 // 辣度图标
@@ -41,6 +42,7 @@ function CurseCard({ entry, index }: { entry: CurseEntry; index: number }) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<CurseEntry[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -120,6 +122,13 @@ export default function HomePage() {
       setShowResults(true);
     } else {
       setShowResults(false);
+    }
+  };
+
+  // 按下回车直接跳转检索页面
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
@@ -207,26 +216,54 @@ export default function HomePage() {
                   onChange={(e) => handleSearch(e.target.value)}
                   onFocus={() => searchQuery && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="w-full pl-12 pr-4 py-4 bg-gray-800/80 backdrop-blur border border-gray-700 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-lg"
+                  onKeyDown={handleKeyDown}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-800/80 backdrop-blur border border-gray-700 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all text-lg animate-glow"
                 />
               </div>
 
-              {/* 搜索结果下拉 */}
-              {showResults && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
-                  {searchResults.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="px-4 py-3 hover:bg-gray-700 transition-colors cursor-pointer border-b border-gray-700/50 last:border-0"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-white">{entry.content}</span>
-                        <SpicyLevel level={entry.spicyLevel} />
+              {/* 搜索结果下拉：含收录关联点击与未收录极具病毒感的引导投稿 */}
+              {showResults && searchQuery.trim().length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-gray-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 text-left backdrop-blur-xl">
+                  {searchResults.length > 0 ? (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-800/50 text-[11px] font-black tracking-widest text-orange-400 uppercase border-b border-gray-800">
+                        🔍 已收录关联神梗
                       </div>
-                      <p className="text-sm text-gray-400 mt-1">{entry.meaning}</p>
-                      <span className="text-xs text-gray-500">{entry.province} · {entry.county}</span>
+                      {searchResults.map((entry) => (
+                        <div
+                          key={entry.id}
+                          onMouseDown={() => router.push(`/search?q=${encodeURIComponent(entry.content)}`)}
+                          className="px-4 py-3 hover:bg-orange-500/10 hover:border-l-4 hover:border-orange-500 transition-all cursor-pointer border-b border-gray-800/50 last:border-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-black text-white">『{entry.content}』</span>
+                            <SpicyLevel level={entry.spicyLevel} />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{entry.meaning}</p>
+                          <div className="flex items-center justify-between text-[10px] text-gray-500 mt-1">
+                            <span>{entry.province} · {entry.county}</span>
+                            <span className="text-orange-400/80 font-bold">点击查看 🎯</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="p-6 text-center border-t-2 border-red-500/40 bg-gradient-to-b from-gray-900 to-gray-950">
+                      <div className="text-4xl mb-3">🤭</div>
+                      <p className="text-red-400 font-bold mb-1.5 text-sm">
+                        “{searchQuery}” 竟然还没有被收录？
+                      </p>
+                      <p className="text-gray-400 text-xs mb-4 leading-relaxed">
+                        这能忍？看来你家乡的方言战力被严重低估了！<br/>快来投稿它，当一回「嘴强至尊开拓者」！
+                      </p>
+                      <button
+                        onMouseDown={() => router.push('/upload')}
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-xl text-xs font-black shadow-lg shadow-red-500/20 active:scale-95 transition-all animate-pulse"
+                      >
+                        📝 录入此词条 · 一战封神
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
