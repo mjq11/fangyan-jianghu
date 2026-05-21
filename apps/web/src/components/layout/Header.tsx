@@ -8,6 +8,7 @@ import { clsx } from 'clsx';
 
 const navItems = [
   { href: '/', label: '🏠 首页' },
+  { href: '/upload', label: '📝 投稿' },
   { href: '/ranking', label: '🏆 战力榜' },
   { href: '/map', label: '🗺️ 方言地图' },
   { href: '/audio', label: '🔔 敲木鱼' },
