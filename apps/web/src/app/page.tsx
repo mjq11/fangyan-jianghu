@@ -257,7 +257,7 @@ export default function HomePage() {
                         这能忍？看来你家乡的方言战力被严重低估了！<br/>快来投稿它，当一回「嘴强至尊开拓者」！
                       </p>
                       <button
-                        onMouseDown={() => router.push('/upload')}
+                        onMouseDown={() => router.push(`/upload?content=${encodeURIComponent(searchQuery)}`)}
                         className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-xl text-xs font-black shadow-lg shadow-red-500/20 active:scale-95 transition-all animate-pulse"
                       >
                         📝 录入此词条 · 一战封神

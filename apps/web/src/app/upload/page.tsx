@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Send, ChevronRight, CheckCircle, Shield, Award, Share2, Check } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { getProvinces, getCitiesByProvince, getCountiesByCity } from '@/lib/regions';
 import { submitEntry, uploadVoice } from '@/lib/supabase';
 import AudioRecorder from '@/components/AudioRecorder';
 
-export default function UploadPage() {
+function UploadForm() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [copied, setCopied] = useState(false);
 
@@ -31,6 +33,14 @@ export default function UploadPage() {
   // 状态
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedEntry, setSubmittedEntry] = useState<{ content: string; province: string; city: string; county: string } | null>(null);
+
+  // 【核心功能】初始化时，如果 URL 携带了 ?content=参数，自动帮用户预填在“方言内容”输入框中，超级贴心！
+  useEffect(() => {
+    const urlContent = searchParams.get('content');
+    if (urlContent) {
+      setContent(urlContent);
+    }
+  }, [searchParams]);
 
   const provinces = getProvinces();
   const cities = province ? getCitiesByProvince(province) : [];
@@ -375,5 +385,13 @@ export default function UploadPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-16 text-gray-500">加载中...</div>}>
+      <UploadForm />
+    </Suspense>
   );
 }

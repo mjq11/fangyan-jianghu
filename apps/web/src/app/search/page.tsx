@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { searchEntries, type CurseEntry } from '@/lib/mock-data';
 
 function SearchContent() {
@@ -19,6 +20,16 @@ function SearchContent() {
       setSearched(true);
     }
   };
+
+  // 【核心修复】当 URL 携带 ?q=参数 时，自动触发一次查询，不需要二次手动点击
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && q.trim()) {
+      setKeyword(q);
+      setResults(searchEntries(q));
+      setSearched(true);
+    }
+  }, [searchParams]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -43,29 +54,47 @@ function SearchContent() {
 
       {searched && (
         <div className="max-w-2xl mx-auto">
-          <p className="text-gray-400 mb-4">找到 <span className="text-orange-400 font-bold">{results.length}</span> 条结果</p>
-          <div className="space-y-3">
-            {results.map((entry) => (
-              <motion.div key={entry.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="curse-card">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-xl font-bold text-white">{entry.content}</h3>
-                  <span>{'🌶️'.repeat(entry.spicyLevel)}</span>
-                </div>
-                <p className="text-orange-300/60 text-sm mb-1">{entry.pinyin}</p>
-                <p className="text-gray-400 text-sm mb-2">{entry.meaning}</p>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <MapPin className="w-3 h-3" /> {entry.province} · {entry.county}
-                </div>
-              </motion.div>
-            ))}
-            {results.length === 0 && <p className="text-center text-gray-500 py-8">未找到相关结果，换个关键词试试？</p>}
-          </div>
+          {results.length > 0 ? (
+            <>
+              <p className="text-gray-400 mb-4">找到 <span className="text-orange-400 font-bold">{results.length}</span> 条结果</p>
+              <div className="space-y-3">
+                {results.map((entry) => (
+                  <motion.div key={entry.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="curse-card">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-xl font-bold text-white">{entry.content}</h3>
+                      <span>{'🌶️'.repeat(entry.spicyLevel)}</span>
+                    </div>
+                    <p className="text-orange-300/60 text-sm mb-1">{entry.pinyin}</p>
+                    <p className="text-gray-400 text-sm mb-2">{entry.meaning}</p>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <MapPin className="w-3 h-3" /> {entry.province} · {entry.county}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // 【核心新增】如果没有被收录，展示一个极其精美、富有趣味并提供直达投稿的按钮卡片
+            <div className="text-center py-12 bg-gray-900/40 border border-gray-800/80 rounded-2xl p-8 max-w-md mx-auto mt-6">
+              <div className="text-5xl mb-4 animate-bounce">🤫</div>
+              <h3 className="text-xl font-black text-orange-400 mb-2">“{keyword}” 竟然还没有被收录？</h3>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                看来此方言战斗力过于逆天，尚未有大侠将其载入史册！<br/>快去成为收录它的「嘴强至尊开拓者」！
+              </p>
+              <Link
+                href={`/upload?content=${encodeURIComponent(keyword)}`}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 active:scale-95 transition-all text-sm"
+              >
+                📝 立即投稿这个方言 · 封神全网
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
       {!searched && (
         <div className="text-center py-16">
-          <Search className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+          <Search className="w-16 h-16 text-gray-700 mx-auto mb-4 animate-pulse" />
           <p className="text-gray-500">输入关键词搜索方言词条</p>
         </div>
       )}
