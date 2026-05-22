@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Flame, Trophy, Search, MapPin, ChevronRight } from 'lucide-react';
+import { Flame, Trophy, Search, MapPin, ChevronRight, Share2, Award, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { provinceRankingData, curseEntries, statsData, searchEntries, type CurseEntry } from '@/lib/mock-data';
 import { formatNumber } from '@/lib/utils';
@@ -301,7 +301,133 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 数据统计 */}
+      {/* 🔥 分享赢认证 引导 Banner */}
+      <section className="relative py-14 overflow-hidden">
+        {/* 背景装饰 */}
+        <div className="absolute inset-0 bg-gradient-to-r from-red-950/40 via-gray-950 to-orange-950/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(239,68,68,0.08),transparent_70%)]" />
+        {/* 上下分隔线装饰 */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.6 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+              
+              {/* 左侧：迷你认证证书预览卡片 */}
+              <motion.div
+                initial={{ opacity: 0, rotate: -3, scale: 0.9 }}
+                whileInView={{ opacity: 1, rotate: -2, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex-shrink-0"
+              >
+                <div className="relative w-56 bg-gradient-to-br from-[#1a0a0a] via-[#0d0d0d] to-[#0a0a1a] border-2 border-red-800/60 rounded-xl overflow-hidden shadow-2xl shadow-red-900/30 transform hover:rotate-0 transition-transform duration-500">
+                  {/* 顶部金色装饰条 */}
+                  <div className="h-1.5 bg-gradient-to-r from-yellow-600 via-red-500 to-yellow-600" />
+                  <div className="p-4">
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-700/50 to-transparent" />
+                      <Award className="w-4 h-4 text-red-500" />
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-700/50 to-transparent" />
+                    </div>
+                    <h4 className="text-sm font-black text-red-500 text-center tracking-wider mb-1">官方认证证书</h4>
+                    <p className="text-[7px] text-gray-600 text-center uppercase tracking-[0.2em] font-mono mb-3">OFFICIAL CERTIFICATE</p>
+                    
+                    <div className="bg-black/40 border border-red-900/20 rounded-lg p-3 mb-3">
+                      <p className="text-[10px] text-gray-500 mb-1.5 text-center">以下方言词条特此授予</p>
+                      <div className="text-lg font-black text-orange-400 text-center py-1">『你的方言』</div>
+                      <div className="flex items-center justify-center gap-1 text-red-400/80 text-[10px]">
+                        <MapPin className="w-2.5 h-2.5" />
+                        <span>你的家乡 · 你的地区</span>
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-red-950/80 to-orange-950/80 border border-red-700/40 rounded-full text-[9px] font-black text-red-300">
+                        <Award className="w-2.5 h-2.5 text-yellow-500" />
+                        「嘴强王者」特许认证
+                      </span>
+                    </div>
+                  </div>
+                  {/* 底部装饰条 */}
+                  <div className="h-1 bg-gradient-to-r from-yellow-600/50 via-red-500/50 to-yellow-600/50" />
+
+                  {/* 迷你印章 */}
+                  <div
+                    className="absolute bottom-8 right-3 w-14 h-14 border-[2px] border-red-600 rounded-full flex items-center justify-center pointer-events-none"
+                    style={{ opacity: 0.3, transform: 'rotate(-12deg)' }}
+                  >
+                    <div className="text-center">
+                      <div className="text-red-600 text-[6px] font-black leading-tight">方言江湖</div>
+                      <div className="text-red-600 text-[4px] font-black">官方认证</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* 右侧：文案引导 */}
+              <div className="flex-1 text-center md:text-left">
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-xs font-bold text-red-400 mb-4">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                    </span>
+                    限时活动 · 投稿即送官方认证
+                  </div>
+
+                  <h2 className="text-2xl md:text-3xl font-black text-white mb-3 leading-tight">
+                    投稿方言，领取
+                    <span className="text-gradient"> 「嘴强王者」</span>
+                    <br className="hidden md:block" />
+                    官方认证证书 🏆
+                  </h2>
+
+                  <p className="text-gray-400 text-sm md:text-base mb-2 leading-relaxed">
+                    每一次投稿，系统都会为你自动生成一张
+                    <span className="text-orange-400 font-bold">专属认证证书</span>，
+                    包含你的方言词条、地区和官方印章。
+                  </p>
+                  <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+                    📸 保存证书图片 → 分享到朋友圈/微博/群聊 → 
+                    <span className="text-red-400 font-bold">炫耀你的家乡战力</span>，
+                    让全国网友见识你的方言火力！
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-start">
+                    <Link
+                      href="/upload"
+                      className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-xl font-bold hover:from-red-700 hover:to-orange-600 transition-all shadow-lg shadow-red-500/25 glow-pulse group"
+                    >
+                      <Share2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                      立即投稿 · 领认证
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                    <span className="text-gray-600 text-xs flex items-center gap-1.5">
+                      <span className="text-green-500">✓</span> 已有 {formatNumber(statsData.totalEntries)}+ 人领取认证
+                    </span>
+                  </div>
+                </motion.div>
+              </div>
+
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+
       <section className="py-10 bg-gray-900/50 border-y border-gray-800">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
