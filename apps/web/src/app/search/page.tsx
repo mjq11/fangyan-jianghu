@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { searchEntries, type CurseEntry } from '@/lib/mock-data';
+import { getApprovedEntries } from '@/lib/supabase';
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -13,27 +14,54 @@ function SearchContent() {
   const [results, setResults] = useState<CurseEntry[]>([]);
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = (kw: string) => {
+  // 异步搜索：mock 数据 + Supabase 已审核数据
+  const doSearch = useCallback(async (kw: string) => {
+    if (!kw.trim()) return;
     setKeyword(kw);
-    if (kw.trim()) {
-      setResults(searchEntries(kw));
-      setSearched(true);
-    }
-  };
+    setSearched(true);
 
-  // 【核心修复】当 URL 携带 ?q=参数 时，自动触发一次查询，不需要二次手动点击
+    // 先显示 mock 数据结果
+    const mockResults = searchEntries(kw);
+    setResults(mockResults);
+
+    // 再异步查询 Supabase 已审核数据并合并
+    try {
+      const approvedEntries = await getApprovedEntries();
+      const kwLower = kw.toLowerCase();
+      const dbResults = approvedEntries
+        .filter(e =>
+          e.content.includes(kwLower) ||
+          e.meaning.includes(kwLower) ||
+          e.province.includes(kwLower) ||
+          e.city.includes(kwLower) ||
+          e.county.includes(kwLower)
+        )
+        .map(e => ({
+          ...e,
+          id: `db_${e.id}`,
+          likes: 0,
+        }));
+
+      // 合并去重（按 content 去重）
+      const existingContents = new Set(mockResults.map(r => r.content));
+      const uniqueDbResults = dbResults.filter(r => !existingContents.has(r.content));
+      setResults([...mockResults, ...uniqueDbResults]);
+    } catch (err) {
+      console.error('查询云端数据失败', err);
+    }
+  }, []);
+
+  // URL 携带 ?q=参数 时自动搜索
   useEffect(() => {
     const q = searchParams.get('q');
     if (q && q.trim()) {
-      setKeyword(q);
-      setResults(searchEntries(q));
-      setSearched(true);
+      doSearch(q);
     }
-  }, [searchParams]);
+  }, [searchParams, doSearch]);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <form onSubmit={(e) => { e.preventDefault(); handleSearch(keyword); }} className="max-w-2xl mx-auto mb-8">
+      <form onSubmit={(e) => { e.preventDefault(); doSearch(keyword); }} className="max-w-2xl mx-auto mb-8">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
@@ -44,7 +72,7 @@ function SearchContent() {
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
           {['四川', '广东', '东北', '湖南', '上海', '北京', '重庆'].map((kw) => (
-            <button key={kw} type="button" onClick={() => handleSearch(kw)}
+            <button key={kw} type="button" onClick={() => doSearch(kw)}
               className="px-3 py-1 text-xs bg-gray-800 text-gray-400 rounded-full hover:bg-orange-500/20 hover:text-orange-400 transition-all">
               🔥 {kw}
             </button>

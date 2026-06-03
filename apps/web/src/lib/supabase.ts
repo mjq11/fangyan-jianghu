@@ -1,15 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase 配置 - 用户需在 Supabase Dashboard 创建项目后填入
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Supabase 配置（anon key 是公开的 public key，安全性由 RLS 策略保障）
+const supabaseUrl = 'https://hgbuocbjdcxsmrrviwnv.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhnYnVvY2JqZGN4c21ycnZpd252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0NjgyMDYsImV4cCI6MjA5NjA0NDIwNn0.XbQw7pLri8peq93XKrc5h2VM7DlpXuQYznIH5P2PTm4';
 
-// 是否启用 Supabase（有配置则启用，否则 fallback 到本地存储）
-export const isSupabaseEnabled = !!(supabaseUrl && supabaseAnonKey);
+// Supabase 已启用
+export const isSupabaseEnabled = true;
 
-export const supabase = isSupabaseEnabled
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ===== 本地存储 fallback（无 Supabase 时用 localStorage） =====
 const STORAGE_KEY = 'fangyan_user_entries';
@@ -190,3 +188,18 @@ function mapDbEntry(row: Record<string, unknown>): UserEntry {
     createdAt: row.created_at as string,
   };
 }
+
+// 获取已审核通过的投稿（供搜索使用）
+export async function getApprovedEntries(): Promise<UserEntry[]> {
+  const { data, error } = await supabase
+    .from('curse_entries')
+    .select('*')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('获取已审核词条失败', error);
+    return [];
+  }
+  return (data || []).map(mapDbEntry);
+}
+
