@@ -183,9 +183,40 @@ export function getCountyByProvince(province: string): CountyData[] {
   return countyRankingData.filter(c => c.province === province);
 }
 
+// 获取 localStorage 中已审核通过的用户投稿，并转为 CurseEntry 格式
+function getApprovedUserEntries(): CurseEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = JSON.parse(localStorage.getItem('fangyan_user_entries') || '[]');
+    return raw
+      .filter((e: Record<string, unknown>) => e.status === 'approved')
+      .map((e: Record<string, unknown>) => ({
+        id: `user_${e.id}`,
+        content: (e.content as string) || '',
+        pinyin: (e.pinyin as string) || '',
+        meaning: (e.meaning as string) || '',
+        category: (e.category as CurseEntry['category']) || 'COMMON_PHRASE',
+        spicyLevel: (e.spicyLevel as number) || 1,
+        province: (e.province as string) || '',
+        city: (e.city as string) || '',
+        county: (e.county as string) || '',
+        likes: 0,
+        scene: (e.scene as string) || '',
+      }));
+  } catch {
+    return [];
+  }
+}
+
+// 合并预置数据和已审核通过的用户投稿
+export function getAllSearchableEntries(): CurseEntry[] {
+  return [...curseEntries, ...getApprovedUserEntries()];
+}
+
 export function searchEntries(keyword: string): CurseEntry[] {
   const kw = keyword.toLowerCase();
-  return curseEntries.filter(e =>
+  const all = getAllSearchableEntries();
+  return all.filter(e =>
     e.content.includes(kw) ||
     e.meaning.includes(kw) ||
     e.province.includes(kw) ||

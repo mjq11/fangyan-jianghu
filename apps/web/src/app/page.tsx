@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Flame, Trophy, Search, MapPin, ChevronRight, Share2, Award, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { provinceRankingData, curseEntries, statsData, searchEntries, type CurseEntry } from '@/lib/mock-data';
+import { provinceRankingData, curseEntries, statsData, searchEntries, getAllSearchableEntries, type CurseEntry } from '@/lib/mock-data';
 import { formatNumber } from '@/lib/utils';
 
 // 辣度图标
@@ -102,7 +102,7 @@ export default function HomePage() {
 
   // 加载热门词条
   useEffect(() => {
-    const sorted = [...curseEntries].sort((a, b) => b.likes - a.likes).slice(0, 6);
+    const sorted = [...getAllSearchableEntries()].sort((a, b) => b.likes - a.likes).slice(0, 6);
     setHotEntries(sorted);
   }, []);
 
