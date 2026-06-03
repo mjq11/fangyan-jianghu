@@ -30,11 +30,11 @@ function SearchContent() {
       const kwLower = kw.toLowerCase();
       const dbResults = approvedEntries
         .filter(e =>
-          e.content.includes(kwLower) ||
-          e.meaning.includes(kwLower) ||
-          e.province.includes(kwLower) ||
-          e.city.includes(kwLower) ||
-          e.county.includes(kwLower)
+          (e.content || '').includes(kwLower) ||
+          (e.meaning || '').includes(kwLower) ||
+          (e.province || '').includes(kwLower) ||
+          (e.city || '').includes(kwLower) ||
+          (e.county || '').includes(kwLower)
         )
         .map(e => ({
           ...e,

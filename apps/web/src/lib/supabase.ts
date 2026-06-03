@@ -169,23 +169,23 @@ export function getVoiceUrl(entryId: string): string | null {
   return voices[entryId] || null;
 }
 
-// DB 结果映射
+// DB 结果映射（所有字段都做空值防护，防止 null 导致 .includes() 报错）
 function mapDbEntry(row: Record<string, unknown>): UserEntry {
   return {
     id: row.id as string,
-    content: row.content as string,
+    content: (row.content as string) || '',
     pinyin: (row.pinyin as string) || '',
-    meaning: row.meaning as string,
-    province: row.province as string,
-    city: row.city as string,
-    county: row.county as string,
+    meaning: (row.meaning as string) || '',
+    province: (row.province as string) || '',
+    city: (row.city as string) || '',
+    county: (row.county as string) || '',
     category: (row.category as UserEntry['category']) || 'CURSE_WORD',
     spicyLevel: (row.spicy_level as number) || 1,
     scene: (row.scene as string) || '',
     source: (row.source as 'user' | 'preset') || 'user',
     status: (row.status as UserEntry['status']) || 'pending',
     voiceUrl: row.voice_url as string | undefined,
-    createdAt: row.created_at as string,
+    createdAt: (row.created_at as string) || '',
   };
 }
 
