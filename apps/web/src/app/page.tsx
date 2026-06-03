@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Flame, Trophy, Search, MapPin, ChevronRight, Share2, Award, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { provinceRankingData, curseEntries, statsData, searchEntries, getAllSearchableEntries, type CurseEntry } from '@/lib/mock-data';
+import { getApprovedEntries } from '@/lib/supabase';
 import { formatNumber } from '@/lib/utils';
 
 // 辣度图标
@@ -115,11 +116,32 @@ export default function HomePage() {
   }, []);
 
   // 搜索处理
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.trim().length > 0) {
-      setSearchResults(searchEntries(query).slice(0, 5));
+      // 先显示 mock 结果
+      const mockResults = searchEntries(query).slice(0, 5);
+      setSearchResults(mockResults);
       setShowResults(true);
+
+      // 异步查询 Supabase 已审核数据并合并
+      try {
+        const approved = await getApprovedEntries();
+        const kwLower = query.toLowerCase();
+        const dbResults = approved
+          .filter(e =>
+            (e.content || '').includes(kwLower) ||
+            (e.meaning || '').includes(kwLower) ||
+            (e.province || '').includes(kwLower) ||
+            (e.city || '').includes(kwLower)
+          )
+          .map(e => ({ ...e, id: `db_${e.id}`, likes: 0 }));
+        const existingContents = new Set(mockResults.map(r => r.content));
+        const unique = dbResults.filter(r => !existingContents.has(r.content));
+        setSearchResults([...mockResults, ...unique].slice(0, 8));
+      } catch (err) {
+        console.warn('首页搜索云端查询失败', err);
+      }
     } else {
       setShowResults(false);
     }
