@@ -10,7 +10,12 @@ import { curseEntries } from '@/lib/mock-data';
 const ADMIN_PASSWORD = 'fangyan2024';
 
 export default function AdminPage() {
-  const [isAuth, setIsAuth] = useState(false);
+  const [isAuth, setIsAuth] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('fangyan_admin_auth') === 'true';
+    }
+    return false;
+  });
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'review' | 'manage' | 'stats'>('review');
   const [entries, setEntries] = useState<UserEntry[]>([]);
@@ -34,6 +39,7 @@ export default function AdminPage() {
   const handleLogin = () => {
     if (password === ADMIN_PASSWORD) {
       setIsAuth(true);
+      sessionStorage.setItem('fangyan_admin_auth', 'true');
     } else {
       alert('密码错误');
     }
