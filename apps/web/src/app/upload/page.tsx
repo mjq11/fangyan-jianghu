@@ -59,8 +59,13 @@ function UploadForm() {
         category, spicyLevel, scene,
       });
 
+      // 语音上传是可选功能，失败不阻止词条提交
       if (audioBlob) {
-        await uploadVoice(entry.id, audioBlob);
+        try {
+          await uploadVoice(entry.id, audioBlob);
+        } catch (voiceErr) {
+          console.warn('语音上传失败，词条已提交成功', voiceErr);
+        }
       }
 
       setSubmittedEntry({ content, province, city, county });

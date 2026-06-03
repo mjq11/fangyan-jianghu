@@ -45,52 +45,46 @@ export default function AudioRecorder({ onRecorded, maxDuration = 30 }: AudioRec
         <div className="text-red-400 text-sm mb-4 bg-red-500/10 p-3 rounded-lg">{error}</div>
       )}
 
-      {/* 未录制状态 */}
-      {!isRecording && !audioUrl && (
+      {/* 录制按钮（开始/停止合一） */}
+      {!audioUrl && (
         <div className="text-center py-6">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={startRecording}
-            className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-shadow"
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg transition-shadow ${
+              isRecording
+                ? 'bg-red-500 shadow-red-500/50'
+                : 'bg-gradient-to-br from-orange-500 to-red-500 shadow-orange-500/30 hover:shadow-orange-500/50'
+            }`}
+            {...(isRecording ? { animate: { scale: [1, 1.12, 1] }, transition: { repeat: Infinity, duration: 1.2 } } : {})}
           >
-            <Mic className="w-8 h-8 text-white" />
+            {isRecording
+              ? <Square className="w-6 h-6 text-white" />
+              : <Mic className="w-8 h-8 text-white" />
+            }
           </motion.button>
-          <p className="text-gray-500 text-sm mt-3">点击开始录音（最长 {maxDuration} 秒）</p>
-        </div>
-      )}
 
-      {/* 录制中 */}
-      {isRecording && (
-        <div className="text-center py-6">
-          <motion.div
-            animate={{ scale: [1, 1.15, 1] }}
-            transition={{ repeat: Infinity, duration: 1.2 }}
-            className="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center mx-auto shadow-lg shadow-red-500/50"
-          >
-            <div className="w-4 h-4 bg-white rounded-sm" />
-          </motion.div>
-
-          {/* 时间进度条 */}
-          <div className="mt-4 max-w-xs mx-auto">
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-red-400 font-mono">{duration.toFixed(1)}s</span>
-              <span className="text-gray-500">{maxDuration}s</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-1.5">
-              <motion.div
-                className="bg-red-500 h-1.5 rounded-full"
-                style={{ width: `${(duration / maxDuration) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={stopRecording}
-            className="mt-4 px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2 mx-auto"
-          >
-            <Square className="w-4 h-4" /> 停止录音
-          </button>
+          {isRecording ? (
+            <>
+              {/* 时间进度条 */}
+              <div className="mt-4 max-w-xs mx-auto">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-red-400 font-mono">{duration.toFixed(1)}s</span>
+                  <span className="text-gray-500">{maxDuration}s</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-1.5">
+                  <motion.div
+                    className="bg-red-500 h-1.5 rounded-full"
+                    style={{ width: `${(duration / maxDuration) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-red-400 text-sm mt-3 animate-pulse">录音中… 点击按钮停止</p>
+            </>
+          ) : (
+            <p className="text-gray-500 text-sm mt-3">点击开始录音（最长 {maxDuration} 秒）</p>
+          )}
         </div>
       )}
 
