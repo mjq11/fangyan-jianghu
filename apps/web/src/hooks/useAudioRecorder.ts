@@ -61,6 +61,11 @@ export function useAudioRecorder(maxDuration = 30) {
   }, [maxDuration]);
 
   const stopRecording = useCallback(() => {
+    // 立即清除计时器，停止读秒
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
     }

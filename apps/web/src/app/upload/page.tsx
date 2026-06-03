@@ -48,7 +48,7 @@ function UploadForm() {
   const cities = province ? getCitiesByProvince(province) : [];
   const counties = (province && city) ? getCountiesByCity(province, city) : [];
 
-  const isFormValid = content && meaning && province && city && county;
+  const isFormValid = content && meaning && province && city;
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
@@ -318,7 +318,7 @@ function UploadForm() {
           <h3 className="font-bold text-white mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-orange-400" />
             选择地区
-            <span className="text-red-400 text-xs">*必填</span>
+            <span className="text-gray-500 text-xs">（省市必填，县区选填）</span>
           </h3>
 
           <div className="grid md:grid-cols-3 gap-3">
