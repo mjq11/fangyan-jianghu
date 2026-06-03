@@ -3,7 +3,7 @@
 import { Mic, Square, RotateCcw, Play, Pause } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface AudioRecorderProps {
   onRecorded: (blob: Blob) => void;
@@ -25,9 +25,10 @@ export default function AudioRecorder({ onRecorded, maxDuration = 30 }: AudioRec
     else { audioRef.current.play(); setIsPlaying(true); }
   };
 
-  const handleConfirm = () => {
+  // 录音完成后自动确认使用
+  useEffect(() => {
     if (audioBlob) onRecorded(audioBlob);
-  };
+  }, [audioBlob, onRecorded]);
 
   const handleReset = () => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
@@ -99,19 +100,14 @@ export default function AudioRecorder({ onRecorded, maxDuration = 30 }: AudioRec
               {isPlaying ? <Pause className="w-6 h-6 text-white" /> : <Play className="w-6 h-6 text-white ml-0.5" />}
             </button>
             <div className="text-left">
-              <p className="text-white font-medium">录制完成</p>
+              <p className="text-green-400 font-medium">✅ 语音已录制</p>
               <p className="text-gray-500 text-sm">{duration.toFixed(1)} 秒</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-3">
-            <button onClick={handleReset} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-1">
-              <RotateCcw className="w-4 h-4" /> 重录
-            </button>
-            <button onClick={handleConfirm} className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center gap-1">
-              ✅ 确认使用
-            </button>
-          </div>
+          <button onClick={handleReset} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-1 mx-auto">
+            <RotateCcw className="w-4 h-4" /> 重录
+          </button>
         </div>
       )}
     </div>
