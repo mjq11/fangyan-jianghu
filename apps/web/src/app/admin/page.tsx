@@ -155,12 +155,23 @@ export default function AdminPage() {
                       <span className="px-2 py-1 text-xs bg-yellow-500/20 text-yellow-400 rounded-full">待审核</span>
                     </div>
                     <p className="text-gray-400 text-sm mb-3">{entry.meaning}</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
                       <MapPin className="w-3 h-3" />
-                      {entry.province} · {entry.city} · {entry.county}
+                      {entry.province} · {entry.city}{entry.county ? ` · ${entry.county}` : ''}
                       <span className="ml-2">{'🌶️'.repeat(entry.spicyLevel)}</span>
                       <span className="ml-auto">{new Date(entry.createdAt).toLocaleString()}</span>
                     </div>
+
+                    {/* 录音播放 */}
+                    {entry.voiceUrl && (
+                      <div className="mb-4 flex items-center gap-3 bg-gray-900/60 rounded-xl p-3">
+                        <Volume2 className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                        <audio controls className="h-8 flex-1" style={{ minWidth: 0 }}>
+                          <source src={entry.voiceUrl} type="audio/webm" />
+                        </audio>
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleReview(entry.id, 'approved')}

@@ -48,37 +48,27 @@ function saveLocalEntries(entries: UserEntry[]) {
 
 // 提交新词条
 export async function submitEntry(data: Omit<UserEntry, 'id' | 'source' | 'status' | 'createdAt'>): Promise<UserEntry> {
-  const entry: UserEntry = {
-    ...data,
-    id: crypto.randomUUID(),
-    source: 'user',
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  };
-
-  if (supabase) {
-    const { error } = await supabase.from('curse_entries').insert({
+  const { data: inserted, error } = await supabase
+    .from('curse_entries')
+    .insert({
       content: data.content,
       pinyin: data.pinyin,
       meaning: data.meaning,
       province: data.province,
       city: data.city,
-      county: data.county,
+      county: data.county || '',
       category: data.category,
       spicy_level: data.spicyLevel,
       scene: data.scene,
       source: 'user',
       status: 'pending',
-    });
-    if (error) throw error;
-  } else {
-    // LocalStorage fallback
-    const entries = getLocalEntries();
-    entries.unshift(entry);
-    saveLocalEntries(entries);
-  }
+    })
+    .select()
+    .single();
 
-  return entry;
+  if (error) throw error;
+
+  return mapDbEntry(inserted);
 }
 
 // 获取所有投稿（含 pending）
@@ -134,32 +124,27 @@ export async function deleteEntry(id: string) {
   }
 }
 
-// 上传语音
+// 上传语音（转 base64 存入数据库 voice_url 字段）
 export async function uploadVoice(entryId: string, audioBlob: Blob): Promise<string> {
-  const fileName = `voices/${entryId}_${Date.now()}.webm`;
-
-  if (supabase) {
-    const { error } = await supabase.storage
-      .from('voice-recordings')
-      .upload(fileName, audioBlob, { contentType: 'audio/webm' });
-    if (error) throw error;
-
-    const { data } = supabase.storage.from('voice-recordings').getPublicUrl(fileName);
-    return data.publicUrl;
-  } else {
-    // LocalStorage fallback: 存为 base64
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        const voices = JSON.parse(localStorage.getItem(VOICE_STORAGE_KEY) || '{}');
-        voices[entryId] = base64;
-        localStorage.setItem(VOICE_STORAGE_KEY, JSON.stringify(voices));
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      try {
+        // 将 base64 音频直接存入数据库
+        const { error } = await supabase
+          .from('curse_entries')
+          .update({ voice_url: base64 })
+          .eq('id', entryId);
+        if (error) throw error;
         resolve(base64);
-      };
-      reader.readAsDataURL(audioBlob);
-    });
-  }
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('读取音频文件失败'));
+    reader.readAsDataURL(audioBlob);
+  });
 }
 
 // 获取语音 URL
